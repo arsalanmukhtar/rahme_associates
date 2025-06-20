@@ -476,103 +476,229 @@ document.addEventListener('DOMContentLoaded', () => {
         resetInactivityTimer();
     }    initializeMapWithUserData();
 
-    // Initialize sidebar toggle functionality
+    // --- Sidebar Toggle Group Logic ---
     const sidebar = document.getElementById('sidebar');
+    const sidebarContent = document.getElementById('sidebar-content');
     const sidebarToggle = document.getElementById('sidebar-toggle');
-    const schemaSelect = document.getElementById('schema-select');
-    const tableSelect = document.getElementById('table-select');
-    const addLayerBtn = document.getElementById('add-layer-btn');
+    const styleSidebarToggle = document.getElementById('style-sidebar-toggle');
+    const sidebarToggleGroup = document.getElementById('sidebar-toggle-group');
 
-    let schemasAndTables = {}; // Will store the fetched schemas and their tables    // Toggle sidebar visibility with button animation
-    sidebarToggle.addEventListener('click', () => {
-        const isHidden = sidebar.classList.contains('translate-x-[calc(100%+1rem)]');
-        sidebar.classList.toggle('translate-x-[calc(100%+1rem)]');
-        
-        // Toggle button position to match sidebar animation
-        if (isHidden) {
-            // Move button left when sidebar opens
-            sidebarToggle.style.transform = 'translate(-21rem, -50%)';
-            fetchSchemasAndTables();
+    let sidebarMode = null; // 'layers' or 'style'
+    let layerList = []; // {name, visible}
+
+    // Helper to render the sidebar content based on mode
+    function renderSidebar() {
+        if (sidebarMode === 'layers') {
+            sidebarContent.innerHTML = `
+                <h2 class="text-lg font-semibold text-gray-800 mb-6">Layer Selection</h2>
+                <div class="mb-4">
+                    <label for="schema-select" class="block text-sm font-medium text-gray-700 mb-2">Select Schema</label>
+                    <div class="relative">
+                        <select id="schema-select" class="block w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer">
+                            <option value="">Select a schema...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <label for="table-select" class="block text-sm font-medium text-gray-700 mb-2">Select Table</label>
+                    <div class="relative">
+                        <select id="table-select" class="block w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed" disabled>
+                            <option value="">Select a table...</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-6 space-y-4">
+                    <button id="add-layer-btn" class="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200" disabled>
+                        <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i>
+                        Add Layer
+                    </button>
+                    <div class="border-t pt-4">
+                        <h3 class="text-sm font-medium text-gray-700 mb-2">Layer Group</h3>
+                        <ul id="layer-list" class="space-y-2">
+                            <!-- Layers will be rendered here -->
+                        </ul>
+                    </div>
+                </div>
+            `;
+            populateSchemaDropdown();
+            renderLayerList();
+            // Inline setupLayerSidebarEvents logic here
+            const schemaSelect = sidebarContent.querySelector('#schema-select');
+            const tableSelect = sidebarContent.querySelector('#table-select');
+            const addLayerBtn = sidebarContent.querySelector('#add-layer-btn');
+            populateSchemaDropdown(schemaSelect, tableSelect, addLayerBtn);
+            schemaSelect.addEventListener('change', () => {
+                const selectedSchema = schemaSelect.value;
+                tableSelect.innerHTML = '<option value="">Select a table...</option>';
+                tableSelect.disabled = !selectedSchema;
+                addLayerBtn.disabled = true;
+                if (selectedSchema) {
+                    const tables = window.schemasAndTables?.[selectedSchema] || [];
+                    tables.forEach(table => {
+                        const option = document.createElement('option');
+                        option.value = table;
+                        option.textContent = table;
+                        tableSelect.appendChild(option);
+                    });
+                }
+            });
+            tableSelect.addEventListener('change', () => {
+                addLayerBtn.disabled = !tableSelect.value;
+            });
+            addLayerBtn.addEventListener('click', () => {
+                const schema = schemaSelect.value;
+                const table = tableSelect.value;
+                if (schema && table) {
+                    const layerName = `${schema}.${table}`;
+                    if (!layerList.some(l => l.name === layerName)) {
+                        layerList.push({ name: layerName, visible: true });
+                        renderLayerList();
+                        renderStyleDropdown();
+                    }
+                }
+            });
+        } else if (sidebarMode === 'style') {
+            sidebarContent.innerHTML = `
+                <h2 class="text-lg font-semibold text-gray-800 mb-6">Layer Styling</h2>
+                <div class="mb-4">
+                    <label for="style-layer-select" class="block text-sm font-medium text-gray-700 mb-2">Select Layer to Style</label>
+                    <div class="relative">
+                        <select id="style-layer-select" class="block w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer">
+                            <option value="">Select a layer...</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+            renderStyleDropdown();
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    // Sidebar toggle logic
+    function openSidebar(mode) {
+        sidebarMode = mode;
+        renderSidebar();
+        sidebar.classList.remove('translate-x-full');
+        // Move both buttons left
+        sidebarToggleGroup.style.transform = 'translate(-21rem, -50%)';
+    }
+    function closeSidebar() {
+        sidebar.classList.add('translate-x-full');
+        sidebarToggleGroup.style.transform = 'translate(0, -50%)';
+        sidebarMode = null;
+    }
+    // Toggle logic for both buttons
+    sidebarToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (sidebarMode === 'layers' && !sidebar.classList.contains('translate-x-full')) {
+            closeSidebar();
         } else {
-            // Reset button position when sidebar closes
-            sidebarToggle.style.transform = 'translate(0, -50%)';
+            openSidebar('layers');
+        }
+    });
+    styleSidebarToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (sidebarMode === 'style' && !sidebar.classList.contains('translate-x-full')) {
+            closeSidebar();
+        } else {
+            openSidebar('style');
+        }
+    });
+    // Close sidebar on outside click
+    document.addEventListener('click', (e) => {
+        if (!sidebar.classList.contains('translate-x-full') &&
+            !sidebar.contains(e.target) &&
+            !sidebarToggleGroup.contains(e.target)) {
+            closeSidebar();
         }
     });
 
-    // Function to fetch schemas and tables from the API
+    // --- Layer Group List Logic ---
+    function renderLayerList() {
+        const ul = sidebarContent.querySelector('#layer-list');
+        ul.innerHTML = '';
+        layerList.forEach((layer, idx) => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center justify-between bg-gray-100 rounded px-2 py-1';
+            li.innerHTML = `
+                <span class="truncate">${layer.name}</span>
+                <span class="flex gap-1">
+                    <button class="toggle-layer-btn p-1 rounded hover:bg-blue-100 focus:outline-none" data-idx="${idx}" title="Toggle visibility">
+                        <i data-lucide="${layer.visible ? 'eye' : 'eye-off'}" class="w-5 h-5 ${layer.visible ? 'text-blue-600' : 'text-gray-400'}"></i>
+                    </button>
+                    <button class="remove-layer-btn p-1 rounded hover:bg-red-100 focus:outline-none" data-idx="${idx}" title="Remove layer">
+                        <i data-lucide="x" class="w-5 h-5 text-red-500"></i>
+                    </button>
+                </span>
+            `;
+            ul.appendChild(li);
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        // Attach events after rendering
+        ul.querySelectorAll('.toggle-layer-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const idx = +btn.dataset.idx;
+                layerList[idx].visible = !layerList[idx].visible;
+                renderLayerList();
+                renderStyleDropdown();
+                console.log('Toggled layer visibility:', layerList[idx]);
+            };
+        });
+        ul.querySelectorAll('.remove-layer-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const idx = +btn.dataset.idx;
+                const removed = layerList.splice(idx, 1)[0];
+                renderLayerList();
+                renderStyleDropdown();
+                console.log('Removed layer:', removed);
+            };
+        });
+    }
+    // --- Style Dropdown Logic ---
+    function renderStyleDropdown() {
+        if (sidebarMode !== 'style') return;
+        const select = sidebarContent.querySelector('#style-layer-select');
+        select.innerHTML = '<option value="">Select a layer...</option>';
+        layerList.forEach(layer => {
+            const option = document.createElement('option');
+            option.value = layer.name;
+            option.textContent = layer.name;
+            select.appendChild(option);
+        });
+        select.onchange = () => {
+            if (select.value) {
+                console.log('Selected layer for styling:', select.value);
+            }
+        };
+    }
+    // --- Schema/Table API logic (reuse your existing fetch logic) ---
+    window.schemasAndTables = {};
     async function fetchSchemasAndTables() {
         try {
             const response = await fetch('/api/v1/map-data/api/schemas-and-tables');
-            if (!response.ok) {
-                throw new Error('Failed to fetch schemas and tables');
-            }
-            
-            schemasAndTables = await response.json();
-            populateSchemaDropdown();
-            
-            // Enable schema select if we have schemas
-            schemaSelect.disabled = Object.keys(schemasAndTables).length === 0;
-            
-            // Show appropriate message if no schemas available
-            if (Object.keys(schemasAndTables).length === 0) {
-                showMessage('No schemas available', 'warning');
+            if (!response.ok) throw new Error('Failed to fetch schemas and tables');
+            window.schemasAndTables = await response.json();
+            if (sidebarMode === 'layers') {
+                renderSidebar();
             }
         } catch (error) {
             console.error('Error fetching schemas and tables:', error);
-            showMessage('Error loading schemas and tables', 'error');
         }
     }
-
-    // Populate the schema dropdown with fetched schemas
-    function populateSchemaDropdown() {
-        // Clear existing options except the placeholder
+    function populateSchemaDropdown(schemaSelect, tableSelect, addLayerBtn) {
+        if (!schemaSelect) return;
         schemaSelect.innerHTML = '<option value="">Select a schema...</option>';
-        
-        // Add new options
-        Object.keys(schemasAndTables).forEach(schema => {
+        Object.keys(window.schemasAndTables).forEach(schema => {
             const option = document.createElement('option');
             option.value = schema;
             option.textContent = schema;
             schemaSelect.appendChild(option);
         });
+        if (tableSelect) tableSelect.innerHTML = '<option value="">Select a table...</option>';
+        if (addLayerBtn) addLayerBtn.disabled = true;
     }
-
-    // Handle schema selection change
-    schemaSelect.addEventListener('change', () => {
-        const selectedSchema = schemaSelect.value;
-        // Clear and disable table select
-        tableSelect.innerHTML = '<option value="">Select a table...</option>';
-        tableSelect.disabled = !selectedSchema;
-        addLayerBtn.disabled = true;
-
-        if (selectedSchema) {
-            // Populate tables for selected schema
-            const tables = schemasAndTables[selectedSchema] || [];
-            tables.forEach(table => {
-                const option = document.createElement('option');
-                option.value = table;
-                option.textContent = table;
-                tableSelect.appendChild(option);
-            });
-        }
-    });
-
-    // Handle table selection change
-    tableSelect.addEventListener('change', () => {
-        // Enable/disable the Add Layer button based on table selection
-        addLayerBtn.disabled = !tableSelect.value;
-    });
-
-    // Handle Add Layer button click
-    addLayerBtn.addEventListener('click', () => {
-        const selectedSchema = schemaSelect.value;
-        const selectedTable = tableSelect.value;
-        
-        // if (selectedSchema && selectedTable) {
-        //     // Here you can implement the logic to add the layer to the map
-        //     // For now, we'll just show a message
-        //     showMessage(`Adding layer from ${selectedSchema}.${selectedTable}`, 'info');
-        // }
-    });
-
+    // Initial fetch
+    fetchSchemasAndTables();
 });

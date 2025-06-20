@@ -51,51 +51,19 @@
             <button id="reset-compass" class="map-control-button" aria-label="Reset Compass">
                 <i data-lucide="compass"></i>
             </button>
-        </div>        <!-- Sidebar Toggle Button -->
-        <button id="sidebar-toggle" class="fixed right-4 top-1/2 -translate-y-1/2 z-20 bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300 ease-in-out transform group translate-x-0">
-            <i data-lucide="settings" class="w-5 h-5 text-gray-600 group-hover:text-gray-800"></i>
-        </button><!-- Sidebar -->
-        <div id="sidebar" class="fixed right-0 top-[calc(65px+1rem)] bottom-14 w-80 bg-white shadow-lg transform translate-x-[calc(100%+1rem)] transition-all duration-300 ease-in-out z-10 rounded-xl border border-gray-200 group mr-4">
-            <div class="p-4 font-['Roboto_Condensed']">
-                <h2 class="text-lg font-semibold text-gray-800 mb-6 font-['Roboto_Condensed']">Layer Selection</h2>
-                
-                <!-- Schema Selection -->
-                <div class="mb-4">
-                    <label for="schema-select" class="block text-sm font-medium text-gray-700 mb-2">Select Schema</label>
-                    <div class="relative">
-                        <select id="schema-select" class="block w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer">
-                            <option value="">Select a schema...</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Table Selection -->
-                <div class="mb-4">
-                    <label for="table-select" class="block text-sm font-medium text-gray-700 mb-2">Select Table</label>
-                    <div class="relative">
-                        <select id="table-select" class="block w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed" disabled>
-                            <option value="">Select a table...</option>
-                        </select>
-                        <div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                            <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Layer Actions -->
-                <div class="mt-6">
-                    <button id="add-layer-btn" class="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200" disabled>
-                        <i data-lucide="plus-circle" class="w-4 h-4 mr-2"></i>
-                        Add Layer
-                    </button>
-                </div>
+        </div>        <!-- Sidebar Toggle Buttons (grouped) -->
+        <div id="sidebar-toggle-group" class="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
+            <button id="sidebar-toggle" class="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300 ease-in-out transform group translate-x-0">
+                <i data-lucide="layers" class="w-5 h-5 text-gray-600 group-hover:text-gray-800"></i>
+            </button>
+            <button id="style-sidebar-toggle" class="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300 ease-in-out transform group translate-x-0">
+                <i data-lucide="palette" class="w-5 h-5 text-gray-600 group-hover:text-gray-800"></i>
+            </button>
+        </div>
+        <!-- Sidebar (shared for both modes) -->
+        <div id="sidebar" class="fixed right-0 top-[calc(65px+1rem)] bottom-14 w-80 bg-white shadow-lg transform translate-x-full transition-all duration-300 ease-in-out z-10 rounded-xl border border-gray-200 group mr-4">
+            <div id="sidebar-content" class="p-4 font-['Roboto_Condensed']">
+                <!-- Content will be injected by JS -->
             </div>
         </div>
     </div>
