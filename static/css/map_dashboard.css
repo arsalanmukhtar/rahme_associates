@@ -1,7 +1,6 @@
 /* static/css/map_dashboard.css */
 
 body {
-    font-family: 'Roboto Condensed', sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
@@ -20,12 +19,20 @@ body {
 }
 
 /* Ensure rounded corners apply universally, but prefer Tailwind classes for explicit elements */
-*:not(svg):not(path) {
+/* *:not(svg):not(path) {
     border-radius: 0.5rem;
-    /* Equivalent to Tailwind's rounded-lg */
-}
+} */
 
 /* --- Custom Styles for Map Controls --- */
+
+/* Minimal sidebar styles - only what can't be done with Tailwind */
+#sidebar.show {
+    transform: translateX(0);
+}
+
+#sidebar-toggle.hide {
+    transform: translate(-20.5rem, -50%);
+}
 
 /* Style for the custom map control buttons */
 .map-control-button {
@@ -82,7 +89,6 @@ body {
     /* Already in HTML, ensuring it's recognized here */
 }
 
-
 /* --- Modal Specific Styles --- */
 
 /* Ensures the modal overlay is transparent and its content can scroll */
@@ -105,13 +111,3 @@ body {
     /* p-8 rounded-2xl shadow-xl w-full border border-gray-200 */
     /* No transition properties as translation is removed */
 }
-
-/* This class is no longer used for translation but is left here for clarity,
-   as the fixed positioning is now managed directly by Tailwind classes on #modal-content-box */
-/*
-.settings-modal-left {
-    left: 4rem;
-    transform: translateX(0%);
-    transition: none; // Remove transition if no movement
-}
-*/

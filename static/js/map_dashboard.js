@@ -474,8 +474,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('click', resetInactivityTimer);
         document.body.addEventListener('scroll', resetInactivityTimer);
         resetInactivityTimer();
-    }
+    }    initializeMapWithUserData();
 
-    initializeMapWithUserData();
+    // Initialize sidebar toggle functionality
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+
+    if (sidebar && sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+            sidebarToggle.classList.toggle('hide');
+        });
+    }
 
 });
