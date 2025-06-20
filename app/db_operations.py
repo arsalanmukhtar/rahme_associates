@@ -53,19 +53,35 @@ def get_schemas_and_tables() -> Dict[str, List[str]]:
     conn = None
     try:
         conn = get_db_connection()
-        with conn.cursor() as cursor:
-            # Get schemas
+        with conn.cursor() as cursor:            # Get schemas that the current user has access to and contain geometry columns
             cursor.execute(
                 """
-                SELECT schema_name
-                FROM information_schema.schemata
-                WHERE schema_name NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
-                ORDER BY schema_name
-            """
+                SELECT DISTINCT f_table_schema
+                FROM geometry_columns gc
+                WHERE f_table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+                  AND srid = 4326
+                ORDER BY f_table_schema;
+                """
             )
             schemas = [row[0] for row in cursor.fetchall()]
 
             schema_data = {}
+            
+            # For each schema, get its tables with geometry columns
+            for schema in schemas:
+                cursor.execute(
+                    """
+                    SELECT DISTINCT f_table_name
+                    FROM geometry_columns
+                    WHERE f_table_schema = %s
+                      AND srid = 4326
+                    ORDER BY f_table_name;
+                    """,
+                    (schema,)
+                )
+                tables = [row[0] for row in cursor.fetchall()]
+                if tables:  # Only include schemas that have tables
+                    schema_data[schema] = tables
             for schema in schemas:
                 # Get tables with geometry (SRID 4326) within each schema
                 cursor.execute(

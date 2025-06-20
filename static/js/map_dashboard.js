@@ -479,12 +479,100 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize sidebar toggle functionality
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebar-toggle');
+    const schemaSelect = document.getElementById('schema-select');
+    const tableSelect = document.getElementById('table-select');
+    const addLayerBtn = document.getElementById('add-layer-btn');
 
-    if (sidebar && sidebarToggle) {
-        sidebarToggle.addEventListener('click', function() {
-            sidebar.classList.toggle('show');
-            sidebarToggle.classList.toggle('hide');
+    let schemasAndTables = {}; // Will store the fetched schemas and their tables    // Toggle sidebar visibility with button animation
+    sidebarToggle.addEventListener('click', () => {
+        const isHidden = sidebar.classList.contains('translate-x-[calc(100%+1rem)]');
+        sidebar.classList.toggle('translate-x-[calc(100%+1rem)]');
+        
+        // Toggle button position to match sidebar animation
+        if (isHidden) {
+            // Move button left when sidebar opens
+            sidebarToggle.style.transform = 'translate(-21rem, -50%)';
+            fetchSchemasAndTables();
+        } else {
+            // Reset button position when sidebar closes
+            sidebarToggle.style.transform = 'translate(0, -50%)';
+        }
+    });
+
+    // Function to fetch schemas and tables from the API
+    async function fetchSchemasAndTables() {
+        try {
+            const response = await fetch('/api/v1/map-data/api/schemas-and-tables');
+            if (!response.ok) {
+                throw new Error('Failed to fetch schemas and tables');
+            }
+            
+            schemasAndTables = await response.json();
+            populateSchemaDropdown();
+            
+            // Enable schema select if we have schemas
+            schemaSelect.disabled = Object.keys(schemasAndTables).length === 0;
+            
+            // Show appropriate message if no schemas available
+            if (Object.keys(schemasAndTables).length === 0) {
+                showMessage('No schemas available', 'warning');
+            }
+        } catch (error) {
+            console.error('Error fetching schemas and tables:', error);
+            showMessage('Error loading schemas and tables', 'error');
+        }
+    }
+
+    // Populate the schema dropdown with fetched schemas
+    function populateSchemaDropdown() {
+        // Clear existing options except the placeholder
+        schemaSelect.innerHTML = '<option value="">Select a schema...</option>';
+        
+        // Add new options
+        Object.keys(schemasAndTables).forEach(schema => {
+            const option = document.createElement('option');
+            option.value = schema;
+            option.textContent = schema;
+            schemaSelect.appendChild(option);
         });
     }
+
+    // Handle schema selection change
+    schemaSelect.addEventListener('change', () => {
+        const selectedSchema = schemaSelect.value;
+        // Clear and disable table select
+        tableSelect.innerHTML = '<option value="">Select a table...</option>';
+        tableSelect.disabled = !selectedSchema;
+        addLayerBtn.disabled = true;
+
+        if (selectedSchema) {
+            // Populate tables for selected schema
+            const tables = schemasAndTables[selectedSchema] || [];
+            tables.forEach(table => {
+                const option = document.createElement('option');
+                option.value = table;
+                option.textContent = table;
+                tableSelect.appendChild(option);
+            });
+        }
+    });
+
+    // Handle table selection change
+    tableSelect.addEventListener('change', () => {
+        // Enable/disable the Add Layer button based on table selection
+        addLayerBtn.disabled = !tableSelect.value;
+    });
+
+    // Handle Add Layer button click
+    addLayerBtn.addEventListener('click', () => {
+        const selectedSchema = schemaSelect.value;
+        const selectedTable = tableSelect.value;
+        
+        // if (selectedSchema && selectedTable) {
+        //     // Here you can implement the logic to add the layer to the map
+        //     // For now, we'll just show a message
+        //     showMessage(`Adding layer from ${selectedSchema}.${selectedTable}`, 'info');
+        // }
+    });
 
 });
