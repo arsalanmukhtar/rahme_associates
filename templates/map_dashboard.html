@@ -12,6 +12,11 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
     <!-- Custom CSS for the map dashboard (now contains all modal styles) -->
     <link rel="stylesheet" href="/static/css/map_dashboard.css">
+    <link rel="stylesheet" href="/static/css/scrollbar-thin-seablue.css">
+    <!-- AG Grid JS & CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css" />
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 </head>
 <body class="flex flex-col min-h-screen font-['Roboto_Condensed'] bg-gray-50">
 
@@ -74,7 +79,7 @@
         <!-- Inner modal content box - max-w-md for wider, p-6 for less height, fixed left for position -->
         <!-- Added pointer-events-auto to ensure interaction with modal content -->
         <div id="modal-content-box" class="p-4 rounded-2xl shadow-xl max-w-md w-full border border-gray-200 fixed left-0 top-1/2 -translate-y-1/2 ml-4 pointer-events-auto">
-            <h3 class="text-4xl font-extrabold text-center text-gray-900 mb-8">Map Settings</h3>
+            <h4 class="text-4xl font-extrabold text-center text-gray-900 mb-8">Map Settings</h4>
             <button id="close-settings-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -166,6 +171,17 @@
     <!-- Main Message Box for Alerts (now fixed at bottom-center) -->
     <div id="messageBox" class="hidden mt-6 p-4 rounded-lg text-sm text-center font-medium fixed bottom-4 left-1/2 -translate-x-1/2 z-50" role="alert"></div>
 
+    <!-- Collapsible AG Grid Table at Bottom -->
+    <!-- AG Grid Offers Table (bottom docked) -->
+    <div id="offers-table-container" class="fixed left-0 w-full z-30 transition-transform duration-300 ease-in-out bg-white shadow-xl border-t border-gray-200 overflow-hidden" style="bottom: 0; height: 40vh; transform: translateY(100%);">
+        <div id="offers-ag-grid" class="w-full h-full ag-theme-alpine"></div>
+    </div>
+    <!-- Floating Chevron Toggle Button (smaller, with gap) -->
+    <button id="toggle-offers-table" class="fixed left-1/2 z-40 rounded-full bg-gray-200 bg-opacity-70 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out" style="transform: translate(-50%, 0); bottom: 0; width: 26px; height: 26px;">
+        <svg id="offers-table-chevron" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
 
     <!-- Mapbox GL JS -->
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>

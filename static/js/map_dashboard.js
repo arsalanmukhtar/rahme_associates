@@ -706,4 +706,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Initial fetch
     fetchSchemasAndTables();
+
+    // --- AG Grid Offers Table Logic ---
+    const offersTableContainer = document.getElementById('offers-table-container');
+    const offersTableChevron = document.getElementById('offers-table-chevron');
+    const offersAgGridDiv = document.getElementById('offers-ag-grid');
+    const offersTableToggleBtn = document.getElementById('toggle-offers-table');
+    let offersTableOpen = false;
+
+    // --- Fix: Table height and chevron gap ---
+    // Helper to update table/chevron positions and heights
+    function updateOffersTableLayout() {
+        if (offersTableOpen) {
+            offersTableContainer.style.transform = 'translateY(0)';
+            offersTableContainer.style.height = '40vh'; // Fixed height when open
+            offersAgGridDiv.style.height = '100%'; // AG Grid fills container
+            offersTableChevron.style.transform = 'rotate(180deg)';
+            offersTableToggleBtn.style.transform = 'translate(-50%, 0)';
+            offersTableToggleBtn.style.bottom = 'calc(40vh + 12px)'; // Add 12px gap above table
+        } else {
+            offersTableContainer.style.transform = 'translateY(100%)';
+            offersTableContainer.style.height = '40vh'; // Keep height for animation
+            offersAgGridDiv.style.height = '100%';
+            offersTableChevron.style.transform = 'rotate(0deg)';
+            offersTableToggleBtn.style.transform = 'translate(-50%, 0)';
+            offersTableToggleBtn.style.bottom = '10px'; // At bottom of viewport
+        }
+    }
+    function toggleOffersTable() {
+        offersTableOpen = !offersTableOpen;
+        updateOffersTableLayout();
+    }
+    offersTableToggleBtn.addEventListener('click', toggleOffersTable);
+    // On load, ensure correct initial state
+    updateOffersTableLayout();
+
+    // AG Grid setup
+    let offersGrid;
+    async function fetchOffersSummary() {
+        try {
+            const authToken = localStorage.getItem('authToken');
+            if (!authToken) return;
+            const response = await fetch('/api/v1/map-data/offers-summary', {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (!response.ok) throw new Error('Failed to fetch offers summary');
+            const data = await response.json();
+            return data;
+        } catch (err) {
+            console.error('Error fetching offers summary:', err);
+            return [];
+        }
+    }
+    async function initOffersGrid() {
+        const rowData = await fetchOffersSummary();
+        const columnDefs = [
+            { headerName: 'ID', field: 'id', minWidth: 60 },
+            { headerName: 'Remark', field: 'remark', minWidth: 140 },
+            { headerName: 'Date', field: 'date', minWidth: 100 },
+            { headerName: 'Time', field: 'time', minWidth: 90 },
+            { headerName: 'Street #', field: 'street_number', minWidth: 80 },
+            { headerName: 'Street Name', field: 'street_name', minWidth: 140 },
+            { headerName: 'Suburb', field: 'suburb', minWidth: 120 },
+            { headerName: 'State', field: 'state', minWidth: 60 },
+            { headerName: 'Frontage', field: 'frontage', minWidth: 80 },
+            { headerName: 'SQM', field: 'sqm', minWidth: 80 },
+            { headerName: 'Offer', field: 'offer', minWidth: 180 },
+            { headerName: 'Comment', field: 'comment', minWidth: 180 },
+        ];
+        offersGrid = agGrid.createGrid(offersAgGridDiv, {
+            columnDefs,
+            rowData,
+            defaultColDef: { resizable: true, sortable: true, filter: true },
+            domLayout: 'normal',
+            animateRows: true,
+            theme: 'legacy',
+        });
+    }
+    if (window.agGrid) initOffersGrid();
 });

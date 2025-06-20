@@ -1,0 +1,48 @@
+/* Custom ultra-thin, modern blue scrollbars for all elements (including AG Grid) */
+
+/* For modern browsers */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(84,160,255,0.5) #e3f0ff; /* thumb color, track color */
+}
+
+/* For Webkit browsers (Chrome, Edge, Safari) */
+*::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+  background: #e3f0ff; /* track color */
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(84,160,255,0.5); /* thumb color with opacity */
+  border-radius: 5px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(55,127,207,0.5);
+}
+*::-webkit-scrollbar-corner {
+  background: #e3f0ff;
+}
+
+/* AG Grid specific: ensure grid body scrollbars are also styled */
+.ag-root ::-webkit-scrollbar,
+.ag-body-viewport ::-webkit-scrollbar {
+  width: 2px;
+  height: 2px;
+  background: #e3f0ff;
+}
+.ag-root ::-webkit-scrollbar-thumb,
+.ag-body-viewport ::-webkit-scrollbar-thumb {
+  background: rgba(84,160,255,0.5);
+  border-radius:5px;
+}
+.ag-root ::-webkit-scrollbar-thumb:hover,
+.ag-body-viewport ::-webkit-scrollbar-thumb:hover {
+  background: rgba(55,127,207,0.5);
+}
+
+/* For Firefox AG Grid body */
+.ag-root,
+.ag-body-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(84,160,255,0.5) #e3f0ff;
+}

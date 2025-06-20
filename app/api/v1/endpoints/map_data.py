@@ -250,3 +250,23 @@ async def get_table_fields(
         raise HTTPException(
             status_code=500, detail=f"An unexpected error occurred: {str(e)}"
         )
+
+
+@router.get("/offers-summary", summary="Get offers summary for current user")
+async def get_offers_summary(
+    current_user: UserInDB = Depends(get_current_user),
+):
+    try:
+        # Use psycopg2 directly to query the offers_summary view/table filtered by user_id
+        conn = db_ops.get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT * FROM public.offers_summary WHERE user_id = %s", (current_user.id,)
+            )
+            columns = [desc[0] for desc in cursor.description]
+            offers = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        conn.close()
+        return offers
+    except Exception as e:
+        print("Error fetching offers summary:", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch offers summary")
