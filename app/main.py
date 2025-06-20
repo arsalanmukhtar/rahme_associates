@@ -1,5 +1,6 @@
 # app/main.py
 
+# Initialize FastAPI application with authentication and map data visualization
 from fastapi import FastAPI, Request, HTTPException
 from typing import Dict, List
 from fastapi.responses import HTMLResponse
