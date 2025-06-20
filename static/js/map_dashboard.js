@@ -579,11 +579,16 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebarMode = mode;
         renderSidebar();
         sidebar.classList.remove('translate-x-full');
-        // Move both buttons left
+        sidebar.classList.add('mr-4');
+        // Animate toggle group with sidebar
+        sidebarToggleGroup.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
         sidebarToggleGroup.style.transform = 'translate(-21rem, -50%)';
     }
     function closeSidebar() {
         sidebar.classList.add('translate-x-full');
+        sidebar.classList.remove('mr-4');
+        // Animate toggle group with sidebar
+        sidebarToggleGroup.style.transition = 'transform 0.3s cubic-bezier(0.4,0,0.2,1)';
         sidebarToggleGroup.style.transform = 'translate(0, -50%)';
         sidebarMode = null;
     }
