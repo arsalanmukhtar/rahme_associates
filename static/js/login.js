@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
 
                 if (response.ok) { // Check if the HTTP status code is in the 200s
-                    showMessage(data.message || 'Login successful!', 'success');
+                    // showMessage(data.message || 'Login successful!', 'success');
                     // Store token (e.g., in localStorage or sessionStorage)
                     localStorage.setItem('authToken', data.access_token);
                     // Redirect to the new dashboard with map

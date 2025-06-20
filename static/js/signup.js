@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     if (loginResponse.ok) {
                         localStorage.setItem('authToken', loginData.access_token);
-                        showMessage('Login successful! Redirecting to dashboard.', 'success');
+                        // showMessage('Login successful! Redirecting to dashboard.', 'success');
                         console.log('Login successful. Redirecting to map dashboard...');
                         // Redirect to the new dashboard with map after successful signup and login
                         setTimeout(() => { window.location.href = '/map-dashboard'; }, 1000); // Shorter delay for smoother transition
