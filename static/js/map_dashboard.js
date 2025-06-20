@@ -784,4 +784,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (window.agGrid) initOffersGrid();
+
+    // --- Basemap Switcher Logic ---
+    const basemapSwitcherBtn = document.getElementById('basemap-switcher-btn');
+    const basemapOptionsDiv = document.getElementById('basemap-options');
+    // Basemap definitions
+    const basemaps = [
+        { key: 'streets', label: 'Streets', style: 'mapbox://styles/mapbox/streets-v12', img: '/static/images/basemaps/streets.png' },
+        { key: 'outdoors', label: 'Outdoors', style: 'mapbox://styles/mapbox/outdoors-v12', img: '/static/images/basemaps/outdoors.png' },
+        { key: 'light', label: 'Light', style: 'mapbox://styles/mapbox/light-v11', img: '/static/images/basemaps/light.png' },
+        { key: 'dark', label: 'Dark', style: 'mapbox://styles/mapbox/dark-v11', img: '/static/images/basemaps/dark.png' },
+        { key: 'satellite', label: 'Satellite', style: 'mapbox://styles/mapbox/satellite-v9', img: '/static/images/basemaps/satellite.png' },
+        { key: 'hybrid', label: 'Hybrid', style: 'mapbox://styles/mapbox/satellite-streets-v12', img: '/static/images/basemaps/hybrid.png' },
+    ];
+    // Render basemap options
+    function renderBasemapOptions() {
+        basemapOptionsDiv.innerHTML = '';
+        basemaps.forEach(bm => {
+            const fig = document.createElement('figure');
+            fig.className = 'flex flex-col items-center cursor-pointer group';
+            fig.innerHTML = `
+                <img src="${bm.img}" alt="${bm.label}" class="w-16 h-16 object-cover rounded-lg border-2 border-transparent group-hover:border-blue-400 transition-all duration-200">
+                <figcaption class="mt-1 text-xs text-gray-700">${bm.label}</figcaption>
+            `;
+            fig.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (window.map && typeof window.map.setStyle === 'function') {
+                    window.map.setStyle(bm.style);
+                } else if (typeof map !== 'undefined' && typeof map.setStyle === 'function') {
+                    map.setStyle(bm.style);
+                }
+                closeBasemapOptions();
+            });
+            basemapOptionsDiv.appendChild(fig);
+        });
+    }
+    function openBasemapOptions() {
+        basemapOptionsDiv.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+        basemapOptionsDiv.classList.add('scale-100', 'opacity-100');
+    }
+    function closeBasemapOptions() {
+        basemapOptionsDiv.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+        basemapOptionsDiv.classList.remove('scale-100', 'opacity-100');
+    }
+    basemapSwitcherBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        renderBasemapOptions();
+        if (basemapOptionsDiv.classList.contains('scale-0')) {
+            openBasemapOptions();
+        } else {
+            closeBasemapOptions();
+        }
+    });
+    // Close on outside click
+    document.addEventListener('click', (e) => {
+        if (!basemapOptionsDiv.contains(e.target) && !basemapSwitcherBtn.contains(e.target)) {
+            closeBasemapOptions();
+        }
+    });
 });

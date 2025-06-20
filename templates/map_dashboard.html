@@ -34,7 +34,7 @@
                 </button>
 
                 <!-- User Panel Dropdown Content -->
-                <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-48 bg-white shadow-lg hidden z-30 border border-gray-100 rounded-none">
+                <div id="user-menu-dropdown" class="absolute right-0 mt-1 w-48 bg-white shadow-lg hidden z-30 border border-gray-100 rounded-none">
                     <div class="block text-sm text-gray-700 hover:bg-gray-100 rounded-none py-2 px-4" id="user-email-display">Loading...</div>
                     <button id="settings-button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150 rounded-none">Settings</button>
                     <button id="logout-button" class="block w-full text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 rounded-none py-2 px-4">Logout</button>
@@ -42,6 +42,22 @@
             </div>
         </div>
     </nav>
+
+    <!-- Basemap Switcher Button (top left, below navbar, slightly lower, brighter border on click/hover) -->
+    <div id="basemap-switcher-container" class="absolute left-4 top-[90px] z-30 flex flex-col items-start">
+        <button id="basemap-switcher-btn" class="bg-white bg-opacity-70 p-1.5 rounded-full shadow-lg border border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-300 ease-in-out flex items-center justify-center" style="width:32px;height:32px;">
+            <!-- Map icon from Lucide, color matches sidebar toggles -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600 group-hover:text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6" stroke="currentColor" stroke-width="2" fill="none"/>
+                <polyline points="9 3 9 18" stroke="currentColor" stroke-width="2" fill="none"/>
+                <polyline points="15 6 15 21" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+        </button>
+        <!-- Basemap Options (hidden by default, animated, 3x2 grid) -->
+        <div id="basemap-options" class="mt-2 bg-white shadow-xl border border-gray-200 rounded-xl p-3 grid grid-cols-3 grid-rows-2 gap-3 transition-all duration-300 ease-in-out scale-0 opacity-0 pointer-events-none" style="transform-origin: top left;">
+            <!-- Basemap figures will be injected by JS -->
+        </div>
+    </div>
 
     <!-- Map Container -->
     <div id="map" class="flex-grow w-full relative z-10">
