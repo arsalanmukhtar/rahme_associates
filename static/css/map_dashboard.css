@@ -1,0 +1,117 @@
+/* static/css/map_dashboard.css */
+
+body {
+    font-family: 'Roboto Condensed', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    /* Ensure body takes full viewport height */
+    background-color: #f8f9fa;
+    /* Light background for general body */
+}
+
+/* Make the map container fill the remaining space */
+#map {
+    flex-grow: 1;
+    /* Allows the map to take up all available vertical space */
+    width: 100%;
+}
+
+/* Ensure rounded corners apply universally, but prefer Tailwind classes for explicit elements */
+*:not(svg):not(path) {
+    border-radius: 0.5rem;
+    /* Equivalent to Tailwind's rounded-lg */
+}
+
+/* --- Custom Styles for Map Controls --- */
+
+/* Style for the custom map control buttons */
+.map-control-button {
+    background-color: transparent;
+    /* No background */
+    border: none;
+    /* Removed border */
+    color: #4a5568;
+    /* Dark gray text/icon color */
+    width: 32px;
+    /* Reduced width (from 38px) */
+    height: 32px;
+    /* Reduced height (from 38px) */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    /* Reduced font size for + / - (from 1.5rem) */
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-radius: 0.5rem;
+    /* Changed to square-rounded border */
+    box-shadow: none;
+    /* Removed subtle shadow for depth */
+}
+
+.map-control-button:hover {
+    background-color: rgba(255, 255, 255, 1);
+    /* Darker white hover effect for a subtle backdrop */
+}
+
+/* Style for the compass SVG icon inside the button */
+.map-control-button svg {
+    width: 18px;
+    /* Reduced SVG size (from 20px) */
+    height: 18px;
+    /* Reduced SVG size (from 20px) */
+    stroke: #4a5568;
+    /* Ensure icon color matches button text color */
+}
+
+/* Specific styling for the custom map controls container */
+#custom-map-controls {
+    display: flex;
+    /* Ensure horizontal layout */
+    gap: 6px;
+    /* Reduced space between buttons (from 8px) */
+    bottom: 0.75rem;
+    /* Moved closer to bottom (from 4px or 1rem, adjust as needed) */
+    right: 0.75rem;
+    /* Moved closer to right (from 4px or 1rem, adjust as needed) */
+    position: absolute;
+    /* Already in HTML, ensuring it's recognized here */
+}
+
+
+/* --- Modal Specific Styles --- */
+
+/* Ensures the modal overlay is transparent and its content can scroll */
+#settings-modal {
+    background-color: transparent;
+    /* Make the modal's fixed overlay completely transparent */
+    overflow-y: auto;
+    /* Allow scrolling within the modal overlay if content overflows */
+    /* No need for flex properties here as inner content is positioned directly by fixed and ml-4 */
+}
+
+/* Styling for the inner modal content box, controlling its size and position */
+#modal-content-box {
+    background-color: white;
+    /* Ensure the content box itself is white */
+    max-width: 20rem;
+    /* Corresponds to Tailwind's max-w-xs (320px) - effectively halves the size from max-w-md (448px) */
+    /* The following Tailwind classes handle the positioning: */
+    /* fixed left-0 ml-4 */
+    /* p-8 rounded-2xl shadow-xl w-full border border-gray-200 */
+    /* No transition properties as translation is removed */
+}
+
+/* This class is no longer used for translation but is left here for clarity,
+   as the fixed positioning is now managed directly by Tailwind classes on #modal-content-box */
+/*
+.settings-modal-left {
+    left: 4rem;
+    transform: translateX(0%);
+    transition: none; // Remove transition if no movement
+}
+*/

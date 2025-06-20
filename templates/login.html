@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <!-- Link to Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Apply the Inter font and custom styles -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap');
+    </style>
+    <!-- Link to your specific CSS file for login -->
+    <link rel="stylesheet" href="/static/css/login.css">
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-400 to-indigo-600">
+    <div class="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border border-gray-200 transform hover:scale-102 transition-transform duration-300 ease-in-out">
+        <h2 class="text-4xl font-extrabold text-center text-gray-900 mb-8">Login to Your Account</h2>
+        <form id="loginForm" class="space-y-6">
+            <div>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email address</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    required
+                    autocomplete="email"
+                    class="block w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base transition duration-150 ease-in-out"
+                    placeholder="you@example.com"
+                >
+            </div>
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    required
+                    autocomplete="current-password"
+                    class="block w-full px-5 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base transition duration-150 ease-in-out"
+                    placeholder="••••••••"
+                >
+            </div>
+            <div class="flex items-center justify-between text-sm">
+                <a href="/templates/forgot_password.html" class="font-medium text-indigo-600 hover:text-indigo-700 transition duration-150 ease-in-out">Forgot your password?</a>
+            </div>
+            <div>
+                <button
+                    type="submit"
+                    class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transform hover:scale-105 transition-all duration-300 ease-in-out"
+                >
+                    Sign in
+                </button>
+            </div>
+        </form>
+        <p class="mt-10 text-center text-base text-gray-600">
+            Don't have an account?
+            <a href="/templates/signup.html" class="font-semibold text-indigo-600 hover:text-indigo-700 transition duration-150 ease-in-out">Sign up here!</a>
+        </p>
+
+        <!-- Message Box for Alerts -->
+        <div id="messageBox" class="hidden mt-6 p-4 rounded-lg text-sm text-center font-medium" role="alert"></div>
+    </div>
+
+    <!-- Link to your specific JavaScript file for login -->
+    <script src="/static/js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+/* static/css/welcome.css */
+
+body {
+    font-family: 'Roboto Condensed', sans-serif;
+    /* Updated font */
+    margin: 0;
+    /* Ensure no default body margin */
+    position: relative;
+    /* Needed for pseudo-element positioning */
+    overflow: hidden;
+    /* Hide overflow from potential blur edge effects */
+}
+
+/* Pseudo-element for the background image with darken and blur */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* CORRECTED PATH: Assumes images are served from /static/images/ */
+    background-image: url('/static/images/welcome_background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    filter: brightness(0.6) blur(3px);
+    /* Darken and blur the background */
+    z-index: -2;
+    /* Place it behind the content */
+}
+
+/* Ensure the main content is positioned above the pseudo-element */
+.relative.z-10 {
+    position: relative;
+    /* Ensure it creates a new stacking context */
+    z-index: 1;
+    /* Place it above the pseudo-element */
+    /* No filter: none; needed here anymore as body filter is removed */
+}
+
+
+/* Custom animations for elements */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounceIn {
+
+    0%,
+    20%,
+    40%,
+    60%,
+    80%,
+    100% {
+        transition-timing-function: cubic-bezier(0.215, 0.610, 0.355, 1.000);
+    }
+
+    0% {
+        opacity: 0;
+        transform: scale3d(.3, .3, .3);
+    }
+
+    20% {
+        transform: scale3d(1.1, 1.1, 1.1);
+    }
+
+    40% {
+        transform: scale3d(.9, .9, .9);
+    }
+
+    60% {
+        opacity: 1;
+        transform: scale3d(1.03, 1.03, 1.03);
+    }
+
+    80% {
+        transform: scale3d(.97, .97, .97);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale3d(1, 1, 1);
+    }
+}
+
+
+.animate-fade-in-down {
+    animation: fadeInDown 1s ease-out forwards;
+}
+
+.animate-fade-in-up {
+    animation: fadeInUp 1s ease-out forwards 0.3s;
+    /* Delay start */
+}
+
+.animate-bounce-in-1 {
+    animation: bounceIn 0.8s ease-out forwards 0.6s;
+    /* Delay start */
+}
+
+.animate-bounce-in-2 {
+    animation: bounceIn 0.8s ease-out forwards 0.9s;
+    /* Further delay */
+}
+
+/* Ensure rounded corners apply universally, but prefer Tailwind classes for explicit elements */
+*:not(svg):not(path) {
+    border-radius: 0.5rem;
+    /* Equivalent to Tailwind's rounded-lg */
+}

@@ -1,0 +1,49 @@
+/* static/css/login.css */
+
+/* Custom styles for the body background and font */
+body {
+    font-family: 'Inter', sans-serif;
+    /* This gradient is now defined inline in login.html for specific page background */
+    /* background: linear-gradient(135deg, #a7bfe8 0%, #619aee 100%); */
+}
+
+/* Custom focus styles for inputs (overrides Tailwind defaults) */
+input:focus {
+    outline: none;
+    /* Remove default outline */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.4);
+    /* Custom focus ring for indigo-500 */
+    border-color: #6366f1;
+    /* Stronger border color on focus */
+}
+
+/* Custom styles for the message box, consistent across all pages */
+#messageBox.success {
+    background-color: #d4edda;
+    /* Light green */
+    color: #155724;
+    /* Dark green */
+    border: 1px solid #c3e6cb;
+}
+
+#messageBox.error {
+    background-color: #f8d7da;
+    /* Light red */
+    color: #721c24;
+    /* Dark red */
+    border: 1px solid #f5c6cb;
+}
+
+#messageBox.info {
+    background-color: #d1ecf1;
+    /* Light blue */
+    color: #0c5460;
+    /* Dark blue */
+    border: 1px solid #bee5eb;
+}
+
+/* Ensure rounded corners apply universally, but prefer Tailwind classes for explicit elements */
+*:not(svg):not(path) {
+    border-radius: 0.5rem;
+    /* Equivalent to Tailwind's rounded-lg */
+}

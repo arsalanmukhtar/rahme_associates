@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Your Real Estate App</title>
+    <!-- Link to Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Apply the Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;500;600;700&display=swap');
+    </style>
+    <!-- Link to your specific CSS file for the welcome page -->
+    <link rel="stylesheet" href="/static/css/welcome.css">
+</head>
+<body class="flex items-center justify-center min-h-screen text-white text-center p-4">
+    <!-- Overlay for better text readability on background image -->
+    <div class="absolute inset-0 bg-black opacity-50"></div>
+
+    <div class="relative z-10 flex flex-col items-center justify-center">
+        <h1 class="text-6xl font-extrabold mb-6 drop-shadow-lg animate-fade-in-down">
+            Find Your Dream Home
+        </h1>
+        <p class="text-xl md:text-2xl mb-10 max-w-2xl drop-shadow-md animate-fade-in-up">
+            Your journey to the perfect property starts here. Explore, discover, and connect.
+        </p>
+        <div class="space-y-4 sm:space-y-0 sm:flex sm:space-x-6">
+            <a href="/templates/login.html" class="inline-block py-4 px-10 bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xl font-bold rounded-full shadow-lg hover:from-blue-600 hover:to-indigo-700 transition duration-300 ease-in-out transform hover:scale-105 animate-bounce-in-1">
+                Login
+            </a>
+            <a href="/templates/signup.html" class="inline-block py-4 px-10 bg-gradient-to-r from-green-500 to-teal-600 text-white text-xl font-bold rounded-full shadow-lg hover:from-green-600 hover:to-teal-700 transition duration-300 ease-in-out transform hover:scale-105 animate-bounce-in-2">
+                Sign Up
+            </a>
+        </div>
+    </div>
+
+    <!-- Link to your specific JavaScript file for the welcome page -->
+    <script src="/static/js/welcome.js"></script>
+</body>
+</html>
