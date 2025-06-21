@@ -25,26 +25,6 @@ class LayerState(BaseModel):
     x: int
     y: int
 
-
-@router.post("/layer-state", summary="Update and log the current layer state")
-async def update_layer_state(state: LayerState):
-    """Update and return the current layer state (for backend logging/display)"""
-    print(
-        f"Backend received layer state: Schema={state.schema_name}, Table={state.table}, Tile={state.z}/{state.x}/{state.y}"
-    )
-    return {
-        "schema": state.schema_name,
-        "table": state.table,
-        "tile": {
-            "z": state.z,
-            "x": state.x,
-            "y": state.y,
-            "url": f"/api/mvt/{state.schema_name}/{state.table}/{state.z}/{state.x}/{state.y}.pbf",
-        },
-        "message": "Layer state received and logged.",
-    }
-
-
 # NEW: Endpoint to get schemas and tables for map layers
 @router.get(
     "/api/schemas-and-tables",
@@ -69,58 +49,6 @@ async def get_available_schemas_and_tables():
             status_code=500,
             detail=f"An unexpected error occurred while fetching schemas and tables: {str(e)}",
         )
-
-
-@router.get(
-    "/mvt/{schema}/{table}/{z}/{x}/{y}.pbf",
-    summary="Get MVT tile for a specific layer and user",
-)
-async def get_mvt_tile(
-    schema: str,
-    table: str,
-    z: int,
-    x: int,
-    y: int,
-    current_user: UserInDB = Depends(
-        get_current_user
-    ),  # Secure endpoint for logged-in user
-):
-    """
-    Retrieves a Mapbox Vector Tile (MVT) for a given schema, table, and tile coordinates.
-    Filters the data based on the logged-in user's ID.
-    """
-    try:
-        # IMPORTANT: Pass current_user.id to your db_ops function for filtering
-        # You need to implement this filtering in get_mvt_tile_from_db
-        tile_data = db_ops.get_mvt_tile_from_db(
-            schema, table, z, x, y, user_id=current_user.id
-        )
-
-        if not tile_data:
-            print(
-                f"Server debug: No MVT data generated for {schema}.{table} tile {z}/{x}/{y} for user {current_user.id}."
-            )
-            # Return an empty protobuf response if no data
-            return Response(b"", media_type="application/x-protobuf")
-
-        return Response(
-            content=bytes(tile_data),
-            media_type="application/x-protobuf",
-            headers={
-                "X-MVT-Layers": "features,labels",  # Adjust as needed based on your MVT generation
-                "Cache-Control": "public, max-age=3600",
-            },
-        )
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate MVT tile: {str(e)}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"An unexpected error occurred during tile generation: {str(e)}",
-        )
-
 
 @router.get(
     "/geometry-type/{schema}/{table}", summary="Get geometry type for a table and user"
@@ -156,41 +84,6 @@ async def get_table_geometry_type(
         raise HTTPException(
             status_code=500, detail=f"An unexpected error occurred: {str(e)}"
         )
-
-
-@router.get(
-    "/extent/{schema}/{table}",
-    summary="Get bounding box of a table's geometry for a user",
-)
-async def get_table_extent(
-    schema: str,
-    table: str,
-    current_user: UserInDB = Depends(get_current_user),  # Secure endpoint
-):
-    """
-    Get the bounding box of a table's geometry, filtered by the logged-in user.
-    """
-    try:
-        # IMPORTANT: Pass current_user.id to your db_ops function for filtering
-        bounds = db_ops.get_table_extent_from_db(schema, table, user_id=current_user.id)
-        if not bounds:
-            raise HTTPException(
-                status_code=404,
-                detail="No geometry data found or extent is null for this user.",
-            )
-
-        return {"bounds": bounds}
-    except RuntimeError as e:
-        raise HTTPException(
-            status_code=500, detail=f"Error getting table extent: {str(e)}"
-        )
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"An unexpected error occurred: {str(e)}"
-        )
-
 
 @router.get(
     "/check-srid/{schema}/{table}",

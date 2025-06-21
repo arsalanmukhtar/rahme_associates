@@ -28,7 +28,7 @@ bearer_scheme = HTTPBearer()
 
 # Initialize FastAPI app
 app = FastAPI(
-    title="FastAPI Authentication App",
+    title="Backend APIs for User Authentication and Map Data",
     description="A simple FastAPI application with user authentication features and map data visualization.",
     version="0.1.0",
 )
