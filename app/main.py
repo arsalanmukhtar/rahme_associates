@@ -20,7 +20,7 @@ from app.database.database import engine, Base
 from app.database.models import User, PasswordResetToken
 
 # Import the authentication and user routers
-from app.api.v1.endpoints import auth, users, map_data, offers_summary  # NEW: Import offers_summary router
+from app.api.v1.endpoints import auth, users, map_data  # NEW: Import offers_summary router
 import app.db_operations as db_ops  # NEW: Import db_operations for schema data
 
 # Define the Bearer security scheme
@@ -136,7 +136,6 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(
     map_data.router, prefix="/api/v1/map-data", tags=["Map Data"]
 )  # NEW: Include map_data router
-app.include_router(offers_summary.router, prefix="/api/v1", tags=["Offers Summary"])  # NEW: Include offers_summary router
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
