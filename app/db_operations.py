@@ -90,7 +90,7 @@ def get_schemas_and_tables() -> Dict[str, List[str]]:
 def get_geometry_type_from_db(schema: str, table: str, user_id: int) -> Optional[str]:
     """
     Retrieves the geometry type (e.g., 'ST_MultiPolygon', 'ST_Point') for a table's
-    geometry column, filtered by user_id.
+    geometry column. If the table has a user_id column, filter by user_id. Otherwise, do not filter.
     """
     conn = None
     try:
@@ -101,28 +101,51 @@ def get_geometry_type_from_db(schema: str, table: str, user_id: int) -> Optional
 
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # Query to get the distinct geometry type, filtered by user_id
-            query = sql.SQL(
+            # Check if user_id column exists
+            cursor.execute(
                 """
-                SELECT DISTINCT ST_GeometryType({geom_column}) AS geom_type
-                FROM {schema_name}.{table_name}
-                WHERE {geom_column} IS NOT NULL AND user_id = %s
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s AND column_name = 'user_id'
                 LIMIT 1
-            """
-            ).format(
-                geom_column=sql.Identifier(geom_column),
-                schema_name=sql.Identifier(schema),
-                table_name=sql.Identifier(table),
+                """,
+                (schema, table)
             )
-            cursor.execute(query, (user_id,))  # Pass user_id as a parameter
+            has_user_id = cursor.fetchone() is not None
+
+            if has_user_id:
+                query = sql.SQL(
+                    """
+                    SELECT DISTINCT ST_GeometryType({geom_column}) AS geom_type
+                    FROM {schema_name}.{table_name}
+                    WHERE {geom_column} IS NOT NULL AND user_id = %s
+                    LIMIT 1
+                    """
+                ).format(
+                    geom_column=sql.Identifier(geom_column),
+                    schema_name=sql.Identifier(schema),
+                    table_name=sql.Identifier(table),
+                )
+                cursor.execute(query, (user_id,))
+            else:
+                query = sql.SQL(
+                    """
+                    SELECT DISTINCT ST_GeometryType({geom_column}) AS geom_type
+                    FROM {schema_name}.{table_name}
+                    WHERE {geom_column} IS NOT NULL
+                    LIMIT 1
+                    """
+                ).format(
+                    geom_column=sql.Identifier(geom_column),
+                    schema_name=sql.Identifier(schema),
+                    table_name=sql.Identifier(table),
+                )
+                cursor.execute(query)
             result = cursor.fetchone()
             return result[0] if result else None
     except Exception as e:
-        # Print the error for debugging purposes
         print(
             f"Error getting geometry type for user {user_id} on {schema}.{table}: {e}"
         )
-        # Re-raise as RuntimeError to be caught by FastAPI's HTTPException handler
         raise RuntimeError(f"Error getting geometry type: {str(e)}")
     finally:
         if conn:
@@ -186,8 +209,9 @@ def get_table_fields_from_db(
     schema: str, table: str, user_id: int
 ) -> List[Dict[str, str]]:
     """
-    Retrieves the non-geometry column names and their data types for a given table,
-    filtered to ensure there's data for the specified user.
+    Retrieves the non-geometry column names and their data types for a given table.
+    If the table has a user_id column, only returns fields if the user has data in the table.
+    If not, returns all non-geometry fields.
     """
     conn = None
     try:
@@ -198,36 +222,56 @@ def get_table_fields_from_db(
 
         conn = get_db_connection()
         with conn.cursor() as cursor:
-            # Subquery to check if any row exists for the given user_id in the table
-            # This ensures we only return fields if the user actually has data in the table.
-            check_user_data_exists_query = sql.SQL(
+            # Check if user_id column exists
+            cursor.execute(
                 """
-                SELECT EXISTS (
-                    SELECT 1
-                    FROM {schema_name}.{table_name}
-                    WHERE user_id = %s
-                    LIMIT 1
+                SELECT 1 FROM information_schema.columns
+                WHERE table_schema = %s AND table_name = %s AND column_name = 'user_id'
+                LIMIT 1
+                """,
+                (schema, table)
+            )
+            has_user_id = cursor.fetchone() is not None
+
+            if has_user_id:
+                # Subquery to check if any row exists for the given user_id in the table
+                check_user_data_exists_query = sql.SQL(
+                    """
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM {schema_name}.{table_name}
+                        WHERE user_id = %s
+                        LIMIT 1
+                    )
+                """
+                ).format(
+                    schema_name=sql.Identifier(schema), table_name=sql.Identifier(table)
                 )
-            """
-            ).format(
-                schema_name=sql.Identifier(schema), table_name=sql.Identifier(table)
-            )
-            cursor.execute(check_user_data_exists_query, (user_id,))
-            user_data_exists = cursor.fetchone()[0]
-
-            if not user_data_exists:
-                return []  # No data for this user, so no fields to return
-
-            # Query to get column names and types, excluding the geometry column
-            query = sql.SQL(
-                """
-                SELECT column_name, data_type
-                FROM information_schema.columns
-                WHERE table_schema = %s AND table_name = %s AND column_name != %s
-                ORDER BY column_name
-            """
-            )
-            cursor.execute(query, (schema, table, geom_column))
+                cursor.execute(check_user_data_exists_query, (user_id,))
+                user_data_exists = cursor.fetchone()[0]
+                if not user_data_exists:
+                    return []  # No data for this user, so no fields to return
+                # Query to get column names and types, excluding the geometry column
+                query = sql.SQL(
+                    """
+                    SELECT column_name, data_type
+                    FROM information_schema.columns
+                    WHERE table_schema = %s AND table_name = %s AND column_name != %s
+                    ORDER BY column_name
+                    """
+                )
+                cursor.execute(query, (schema, table, geom_column))
+            else:
+                # No user_id column, just return all non-geometry fields
+                query = sql.SQL(
+                    """
+                    SELECT column_name, data_type
+                    FROM information_schema.columns
+                    WHERE table_schema = %s AND table_name = %s AND column_name != %s
+                    ORDER BY column_name
+                    """
+                )
+                cursor.execute(query, (schema, table, geom_column))
             return [{"name": row[0], "type": row[1]} for row in cursor.fetchall()]
     except Exception as e:
         print(
