@@ -2,7 +2,7 @@
 
 /* Custom styles for the body background and font */
 body {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Barlow', sans-serif;
     /* This gradient is now defined inline in login.html for specific page background */
     /* background: linear-gradient(135deg, #a7bfe8 0%, #619aee 100%); */
 }

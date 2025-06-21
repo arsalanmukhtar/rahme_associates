@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
         messageBox.className = 'hidden'; // Reset class for next message
     }
 
+    // Set the font family to Barlow for the document body
+    document.body.style.fontFamily = "'Barlow', sans-serif";
+
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
             event.preventDefault(); // Prevent default form submission

@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const signupForm = document.getElementById('signupForm');
     const messageBox = document.getElementById('messageBox');
 
+    document.body.style.fontFamily = "'Barlow', sans-serif";
+
     function showMessage(message, type = 'info') {
         messageBox.textContent = message;
         messageBox.className = `mt-6 p-4 rounded-lg text-sm text-center font-medium ${type}`;

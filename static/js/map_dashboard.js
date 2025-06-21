@@ -339,6 +339,8 @@ document.addEventListener('DOMContentLoaded', () => {
             style: 'mapbox://styles/mapbox/streets-v11',
             center: initialCenter,
             zoom: initialZoom,
+            minZoom: 0,
+            maxZoom: 19,
             attributionControl: false, // Explicitly disable attribution control
             hash: true // Enable hash in URL for easy sharing
         });
@@ -842,4 +844,7 @@ document.addEventListener('DOMContentLoaded', () => {
             closeBasemapOptions();
         }
     });
+
+    // If you set font-family in JS, use Barlow:
+    document.body.style.fontFamily = "'Barlow', sans-serif";
 });

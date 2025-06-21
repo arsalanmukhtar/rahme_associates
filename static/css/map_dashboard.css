@@ -1,6 +1,7 @@
 /* static/css/map_dashboard.css */
 
 body {
+    font-family: 'Barlow', sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
@@ -110,4 +111,13 @@ body {
     /* fixed left-0 ml-4 */
     /* p-8 rounded-2xl shadow-xl w-full border border-gray-200 */
     /* No transition properties as translation is removed */
+}
+
+/* Sidebar select and button border style override */
+#sidebar select, #sidebar select:focus, #sidebar select:active,
+#sidebar #add-layer-btn, #sidebar #add-layer-btn:focus, #sidebar #add-layer-btn:active {
+  border-width: 1px !important;
+  border-color: #d1d5db !important; /* Tailwind gray-300 */
+  box-shadow: none !important;
+  outline: none !important;
 }

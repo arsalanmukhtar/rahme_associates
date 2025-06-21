@@ -6,8 +6,10 @@
     <title>Map Dashboard</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Roboto Condensed Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@300;400;700&display=swap" rel="stylesheet">
+    <!-- Mulish Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Barlow Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- Mapbox GL JS CSS -->
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
     <!-- Custom CSS for the map dashboard (now contains all modal styles) -->
@@ -18,7 +20,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css" />
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 </head>
-<body class="flex flex-col min-h-screen font-['Roboto_Condensed'] bg-gray-50">
+<body class="flex flex-col min-h-screen font-['Barlow'] bg-gray-50">
 
     <!-- Navbar -->
     <nav class="bg-white p-1 shadow-xl z-20 relative border-b border-gray-300">
@@ -83,7 +85,7 @@
         </div>
         <!-- Sidebar (shared for both modes) -->
         <div id="sidebar" class="fixed right-0 top-[calc(65px+1rem)] bottom-14 w-80 bg-white shadow-lg transform translate-x-full transition-all duration-300 ease-in-out z-10 rounded-xl border border-gray-200 group">
-            <div id="sidebar-content" class="p-4 font-['Roboto_Condensed']">
+            <div id="sidebar-content" class="p-4 font-['Barlow']">
                 <!-- Content will be injected by JS -->
             </div>
         </div>

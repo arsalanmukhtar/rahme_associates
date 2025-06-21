@@ -47,55 +47,38 @@ def get_geometry_column(schema: str, table: str) -> Optional[str]:
 
 def get_schemas_and_tables() -> Dict[str, List[str]]:
     """
-    Retrieves all schemas and tables that have PostGIS geometry columns with SRID 4326.
+    Retrieves all schemas and tables that have PostGIS geometry columns (any SRID).
     This function is NOT filtered by user_id, as it's for discovering available layers.
     """
     conn = None
     try:
         conn = get_db_connection()
-        with conn.cursor() as cursor:            # Get schemas that the current user has access to and contain geometry columns
+        with conn.cursor() as cursor:
+            # Get schemas that the current user has access to and contain geometry columns
             cursor.execute(
                 """
                 SELECT DISTINCT f_table_schema
                 FROM geometry_columns gc
                 WHERE f_table_schema NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
-                  AND srid = 4326
                 ORDER BY f_table_schema;
                 """
             )
             schemas = [row[0] for row in cursor.fetchall()]
 
             schema_data = {}
-            
-            # For each schema, get its tables with geometry columns
+            # For each schema, get its tables with geometry columns (any SRID)
             for schema in schemas:
                 cursor.execute(
                     """
                     SELECT DISTINCT f_table_name
                     FROM geometry_columns
                     WHERE f_table_schema = %s
-                      AND srid = 4326
                     ORDER BY f_table_name;
                     """,
                     (schema,)
                 )
                 tables = [row[0] for row in cursor.fetchall()]
                 if tables:  # Only include schemas that have tables
-                    schema_data[schema] = tables
-            for schema in schemas:
-                # Get tables with geometry (SRID 4326) within each schema
-                cursor.execute(
-                    sql.SQL(
-                        """
-                    SELECT DISTINCT f_table_name
-                    FROM public.geometry_columns
-                    WHERE f_table_schema = %s AND srid = 4326
-                """
-                    ),
-                    [schema],
-                )
-                tables = [row[0] for row in cursor.fetchall()]
-                if tables:
                     schema_data[schema] = tables
             return schema_data
     except Exception as e:

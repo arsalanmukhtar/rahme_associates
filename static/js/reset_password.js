@@ -4,6 +4,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const resetPasswordForm = document.getElementById('resetPasswordForm');
     const messageBox = document.getElementById('messageBox');
 
+    // Set the font family to Barlow for the document body
+    document.body.style.fontFamily = "'Barlow', sans-serif";
+
     function showMessage(message, type = 'info') {
         messageBox.textContent = message;
         messageBox.className = `mt-6 p-4 rounded-lg text-sm text-center font-medium ${type}`;
