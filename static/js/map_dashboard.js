@@ -1621,12 +1621,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Search location using Mapbox Geocoding API
     async function searchLocation(query) {
         try {
-            const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
-            const params = new URLSearchParams({
+            const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;            const params = new URLSearchParams({
                 access_token: mapboxAccessToken,
-                types: 'place,address,locality,neighborhood',
-                limit: 5,
-                country: 'AU', // Restrict to Australia
+                types: 'country,region,place,district,locality,neighborhood,address,poi',
+                limit: 7,
+                autocomplete: true,
+                fuzzyMatch: true
             });
 
             const response = await fetch(`${endpoint}?${params}`);
