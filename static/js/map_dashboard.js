@@ -616,6 +616,18 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         }
                     } catch (e) { }
+                    const layerName = `${schema}.${table}`;
+                    // Add the layer to the list
+                    layerList.push({
+                        name: layerName,
+                        schema,
+                        table,
+                        type,
+                        geometryType,
+                        visible: true
+                    });
+                    renderLayerList();
+                    renderStyleDropdown();
                     console.log('Add Layer:', { schema, table, geometryType, type });
                 }
             });
@@ -685,12 +697,31 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderLayerList() {
         const ul = sidebarContent.querySelector('#layer-list');
         ul.innerHTML = '';
+        // Make the layer group vertical, full width, and scrollable
+        ul.style.display = 'flex';
+        ul.style.flexDirection = 'column';
+        ul.style.overflowY = 'auto';
+        ul.style.overflowX = 'hidden';
+        ul.style.maxHeight = '220px'; // Adjust as needed for sidebar height
+        ul.style.width = '100%';
+        ul.style.gap = '0.5rem';
+        ul.style.paddingBottom = '0.5rem';
+        // Group layers by type for badge color
+        const typeColors = {
+            Circle: 'bg-blue-100 text-blue-700 border-blue-300',
+            Symbol: 'bg-green-100 text-green-700 border-green-300',
+            Heatmap: 'bg-yellow-100 text-yellow-700 border-yellow-300',
+            Line: 'bg-purple-100 text-purple-700 border-purple-300',
+            Fill: 'bg-pink-100 text-pink-700 border-pink-300',
+        };
         layerList.forEach((layer, idx) => {
             const li = document.createElement('li');
-            li.className = 'flex items-center justify-between bg-gray-100 rounded px-2 py-1';
+            li.className = 'flex items-center bg-gray-100 rounded px-2 py-1 border border-gray-200 w-full';
+            li.style.marginBottom = '0';
             li.innerHTML = `
-                <span class="truncate">${layer.name}</span>
-                <span class="flex gap-1">
+                <span class="truncate font-medium">${layer.schema}.${layer.table}</span>
+                <span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold border ${typeColors[layer.type] || 'bg-gray-200 text-gray-700 border-gray-300'}">${layer.type}</span>
+                <span class="flex gap-1 ml-auto">
                     <button class="toggle-layer-btn p-1 rounded hover:bg-blue-100 focus:outline-none" data-idx="${idx}" title="Toggle visibility">
                         <i data-lucide="${layer.visible ? 'eye' : 'eye-off'}" class="w-5 h-5 ${layer.visible ? 'text-blue-600' : 'text-gray-400'}"></i>
                     </button>
@@ -710,7 +741,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 layerList[idx].visible = !layerList[idx].visible;
                 renderLayerList();
                 renderStyleDropdown();
-                console.log('Toggled layer visibility:', layerList[idx]);
+                console.log(`Layer toggled:`, {
+                    name: layerList[idx].name,
+                    type: layerList[idx].type,
+                    visible: layerList[idx].visible
+                });
             };
         });
         ul.querySelectorAll('.remove-layer-btn').forEach(btn => {
@@ -720,7 +755,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const removed = layerList.splice(idx, 1)[0];
                 renderLayerList();
                 renderStyleDropdown();
-                console.log('Removed layer:', removed);
+                console.log(`Layer removed:`, {
+                    name: removed.name,
+                    type: removed.type
+                });
             };
         });
     }
@@ -732,14 +770,53 @@ document.addEventListener('DOMContentLoaded', () => {
         layerList.forEach(layer => {
             const option = document.createElement('option');
             option.value = layer.name;
-            option.textContent = layer.name;
+            // ...pretty label code...
+            let colorDot = '';
+            switch (layer.type) {
+                case 'Circle': colorDot = '🔵'; break;
+                case 'Symbol': colorDot = '🟢'; break;
+                case 'Heatmap': colorDot = '🟡'; break;
+                case 'Line': colorDot = '🟣'; break;
+                case 'Fill': colorDot = '🟣'; break;
+                default: colorDot = '⚪';
+            }
+            option.textContent = `${colorDot} ${layer.name}  [${layer.type}]`;
             select.appendChild(option);
         });
         // Restore filter row rendering in style panel (but not type row)
         renderLayerTypeRow(select.value, { onlyFilter: true });
-        select.onchange = () => {
+        select.onchange = async () => {
+            await fetchAndSetLayerFields(select.value);
             renderLayerTypeRow(select.value, { onlyFilter: true });
         };
+        // Fetch fields for the initially selected layer (if any)
+        if (select.value) {
+            fetchAndSetLayerFields(select.value).then(() => {
+                renderLayerTypeRow(select.value, { onlyFilter: true });
+            });
+        }
+    }
+
+    // Fetch fields for a given layerName and store in layerFields
+    async function fetchAndSetLayerFields(layerName) {
+        if (!layerName) return;
+        if (layerFields[layerName]) return; // Already fetched
+        const layer = layerList.find(l => l.name === layerName);
+        if (!layer) return;
+        const authToken = localStorage.getItem('authToken');
+        try {
+            const resp = await fetch(`/api/v1/map-data/fields/${layer.schema}/${layer.table}`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                // Expecting data.fields: [{name, type}]
+                layerFields[layerName] = (data.fields || []).map(f => ({ value: f.name, label: f.name }));
+            }
+        } catch (e) {
+            // Ignore errors, fallback to empty
+            layerFields[layerName] = [];
+        }
     }
 
     // Add a row with label and dropdown for Field (filter), optionally only filter
