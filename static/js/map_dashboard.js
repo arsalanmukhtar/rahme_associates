@@ -1063,9 +1063,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Basemap Switcher Logic ---
     const basemapSwitcherBtn = document.getElementById('basemap-switcher-btn');
-    const basemapOptionsDiv = document.getElementById('basemap-options');
-    // Basemap definitions
+    const basemapOptionsDiv = document.getElementById('basemap-options');    // Basemap definitions
     const basemaps = [
+        { 
+            key: 'none', 
+            label: 'Plain', 
+            style: {
+                version: 8,
+                sources: {},
+                layers: [{
+                    id: 'background',
+                    type: 'background',
+                    paint: { 'background-color': '#ffffff' }
+                }]
+            },
+            img: '/static/images/basemaps/plain.png'  // You'll need to add this image
+        },
         { key: 'streets', label: 'Streets', style: 'mapbox://styles/mapbox/streets-v12', img: '/static/images/basemaps/streets.png' },
         { key: 'outdoors', label: 'Outdoors', style: 'mapbox://styles/mapbox/outdoors-v12', img: '/static/images/basemaps/outdoors.png' },
         { key: 'light', label: 'Light', style: 'mapbox://styles/mapbox/light-v11', img: '/static/images/basemaps/light.png' },
@@ -1079,8 +1092,7 @@ document.addEventListener('DOMContentLoaded', () => {
         basemaps.forEach(bm => {
             const fig = document.createElement('figure');
             fig.className = 'flex flex-col items-center cursor-pointer group';
-            fig.innerHTML = `
-                <img src="${bm.img}" alt="${bm.label}" class="w-16 h-16 object-cover rounded-lg border-2 border-transparent group-hover:border-blue-400 transition-all duration-200">
+            fig.innerHTML = `                <img src="${bm.img}" alt="${bm.label}" class="w-16 h-16 object-cover rounded-lg border border-gray-300">
                 <figcaption class="mt-1 text-xs text-gray-700">${bm.label}</figcaption>
             `;            fig.addEventListener('click', async (e) => {
                 e.stopPropagation();
