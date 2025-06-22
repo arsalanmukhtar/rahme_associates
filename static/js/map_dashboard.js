@@ -493,6 +493,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // Store geometry type for each layer
     let layerGeometryTypes = {};
 
+    // --- Remapping Functions for UI Display ---
+    function remapSchemaName(schema) {
+        if (!schema) return '';
+        return schema.charAt(0).toUpperCase() + schema.slice(1).toLowerCase();
+    }
+    function remapTableName(table) {
+        if (!table) return '';
+        return table.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    }
+    function remapType(type) {
+        if (!type) return '';
+        return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+    }
+    function remapFilterField(field) {
+        if (!field) return '';
+        return field.replace(/[^a-zA-Z0-9_]/g, '').replace(/_/g, ' ').toUpperCase();
+    }
+
     // Helper to render the sidebar content based on mode
     function renderSidebar() {
         if (sidebarMode === 'layers') {
@@ -555,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     tables.forEach(table => {
                         const option = document.createElement('option');
                         option.value = table;
-                        option.textContent = table;
+                        option.textContent = remapTableName(table);
                         tableSelect.appendChild(option);
                     });
                 }
@@ -586,7 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } catch (e) { }
                     import('/static/js/map_layers.js').then(mod => {
                         const allowedTypes = mod.GEOMETRY_LAYER_TYPES[geometryType] || [];
-                        typeSelect.innerHTML = '<option value="">Select a type...</option>' + allowedTypes.map(t => `<option value="${t}">${t.charAt(0).toUpperCase() + t.slice(1)}</option>`).join('');
+                        typeSelect.innerHTML = '<option value="">Select a type...</option>' + allowedTypes.map(t => `<option value="${t}">${remapType(t)}</option>`).join('');
                         typeSelect.disabled = false;
                     });
                 }
@@ -628,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     renderLayerList();
                     renderStyleDropdown();
-                    console.log('Add Layer:', { schema, table, geometryType, type });
+                    console.log('Add Layer:', { schema: remapSchemaName(schema), table: remapTableName(table), geometryType, type: remapType(type) });
                 }
             });
         } else if (sidebarMode === 'style') {
@@ -718,9 +736,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = 'flex items-center bg-gray-100 rounded px-2 py-1 border border-gray-200 w-full';
             li.style.marginBottom = '0';
+            // Only show the table name (remapped) in the group, not schema
             li.innerHTML = `
-                <span class="truncate font-medium">${layer.schema}.${layer.table}</span>
-                <span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold border ${typeColors[layer.type] || 'bg-gray-200 text-gray-700 border-gray-300'}">${layer.type}</span>
+                <span class="truncate font-medium">${remapTableName(layer.table)}</span>
+                <span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold border ${typeColors[layer.type] || 'bg-gray-200 text-gray-700 border-gray-300'}">${remapType(layer.type)}</span>
                 <span class="flex gap-1 ml-auto">
                     <button class="toggle-layer-btn p-1 rounded hover:bg-blue-100 focus:outline-none" data-idx="${idx}" title="Toggle visibility">
                         <i data-lucide="${layer.visible ? 'eye' : 'eye-off'}" class="w-5 h-5 ${layer.visible ? 'text-blue-600' : 'text-gray-400'}"></i>
@@ -742,8 +761,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderLayerList();
                 renderStyleDropdown();
                 console.log(`Layer toggled:`, {
-                    name: layerList[idx].name,
-                    type: layerList[idx].type,
+                    name: remapTableName(layerList[idx].table),
+                    type: remapType(layerList[idx].type),
                     visible: layerList[idx].visible
                 });
             };
@@ -756,8 +775,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderLayerList();
                 renderStyleDropdown();
                 console.log(`Layer removed:`, {
-                    name: removed.name,
-                    type: removed.type
+                    name: remapTableName(removed.table),
+                    type: remapType(removed.type)
                 });
             };
         });
@@ -770,7 +789,7 @@ document.addEventListener('DOMContentLoaded', () => {
         layerList.forEach(layer => {
             const option = document.createElement('option');
             option.value = layer.name;
-            // ...pretty label code...
+            // Show type and table name only
             let colorDot = '';
             switch (layer.type) {
                 case 'Circle': colorDot = '🔵'; break;
@@ -780,7 +799,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'Fill': colorDot = '🟣'; break;
                 default: colorDot = '⚪';
             }
-            option.textContent = `${colorDot} ${layer.name}  [${layer.type}]`;
+            option.textContent = `${colorDot} ${remapTableName(layer.table)} [${remapType(layer.type)}]`;
             select.appendChild(option);
         });
         // Restore filter row rendering in style panel (but not type row)
@@ -832,7 +851,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let fields = [];
             if (layerName && layerFields[layerName]) {
                 fields = layerFields[layerName];
-                fieldOptions = '<option value="">Select a field...</option>' + fields.map(f => `<option value="${f.value}">${f.label}</option>`).join('');
+                fieldOptions = '<option value="">Select a field...</option>' + fields.map(f => `<option value="${f.value}">${remapFilterField(f.label)}</option>`).join('');
             }
             const fieldRow = document.createElement('div');
             fieldRow.id = 'layer-field-row';
@@ -873,7 +892,7 @@ document.addEventListener('DOMContentLoaded', () => {
         Object.keys(window.schemasAndTables).forEach(schema => {
             const option = document.createElement('option');
             option.value = schema;
-            option.textContent = schema;
+            option.textContent = remapSchemaName(schema);
             schemaSelect.appendChild(option);
         });
         if (tableSelect) tableSelect.innerHTML = '<option value="">Select a table...</option>';
