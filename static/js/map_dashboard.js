@@ -849,8 +849,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const prev = sidebarContent.querySelector('#layer-type-row');
         if (prev) prev.remove();
         const prevField = sidebarContent.querySelector('#layer-field-row');
-        if (prevField) prevField.remove();
-        // Only render filter row if onlyFilter is true
+        if (prevField) prevField.remove();        // Only render filter row if onlyFilter is true
         if (opts.onlyFilter) {
             let fieldOptions = '<option value="">Select a field...</option>';
             let fields = [];
@@ -870,6 +869,16 @@ document.addEventListener('DOMContentLoaded', () => {
             // Insert after the layer select
             const layerSelectDiv = sidebarContent.querySelector('#style-layer-select').parentElement.parentElement;
             layerSelectDiv.parentNode.insertBefore(fieldRow, layerSelectDiv.nextSibling);
+
+            // Add change event listener to filter select
+            const filterSelect = fieldRow.querySelector('#layer-field-select');
+            filterSelect.addEventListener('change', async () => {
+                const selectedLayerName = sidebarContent.querySelector('#style-layer-select').value;
+                const selectedField = filterSelect.value;
+                if (selectedLayerName) {
+                    await updateLayerFilter(selectedLayerName, selectedField);
+                }
+            });
         } else {
             // ...existing code for full type+filter row...
             // ...existing code...
@@ -1060,6 +1069,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return [];
     }    async function createLayerFilter(fields, filterField) {
+        // Start with a valid default filter that accepts everything
+        let filter = ["all"];
+        
         // Check for user_id first
         const hasUserId = fields.some(f => f.name === 'user_id');
         console.log('Table has user_id:', hasUserId);
@@ -1089,30 +1101,23 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create filter based on selected field if any
         let fieldFilter = null;
         if (filterField) {
-            fieldFilter = ['!=', ['get', filterField], null];
+            fieldFilter = ['has', ['get', filterField]];
             console.log('Created field filter:', fieldFilter);
+        }        // For tables with user_id, always include the user_id filter
+        if (hasUserId && userIdFilter) {
+            filter.push(userIdFilter);
         }
-
-        // For tables with user_id, always include the user_id filter
-        if (hasUserId) {
-            if (fieldFilter) {
-                // Combine user_id filter with field filter
-                const finalFilter = ['all', userIdFilter, fieldFilter];
-                console.log('Combined user_id and field filters:', finalFilter);
-                return finalFilter;
-            } else {
-                // Use only user_id filter
-                console.log('Using only user_id filter:', userIdFilter);
-                return userIdFilter;
-            }
-        } else if (fieldFilter) {
-            // For tables without user_id, use field filter if available
-            console.log('Using only field filter:', fieldFilter);
-            return fieldFilter;
+        
+        // Add field filter if available
+        if (fieldFilter) {
+            filter.push(fieldFilter);
         }
-
-        // If no filters are applicable, return null
-        return null;
+        
+        // Log the final filter
+        console.log('Final filter:', filter);
+        
+        // If filter only contains ["all"] with no conditions, it will allow everything
+        return filter;
     }
 
     async function addLayerToMap(schema, table, type, geometryType) {
@@ -1129,10 +1134,10 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('Layer filter:', filter);
 
         const sourceName = `${table.toLowerCase()}_tiles`;
-        const sourceLayer = `${schema.toLowerCase()}.${table.toLowerCase()}`;
+        const sourceLayer = `${table.toLowerCase()}`;
         const sourceDef = {
             type: 'vector',
-            tiles: [`http://host:port/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
+            tiles: [`http://localhost:3000/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
             maxzoom: 20
         };
 
@@ -1161,36 +1166,33 @@ document.addEventListener('DOMContentLoaded', () => {
                         'line-opacity': 0.7
                     }
                 }
-            ];
-
-            // Add filter to both layers if it exists
-            if (filter) {
+            ];            // Add filter to both layers only if it's a valid array
+            if (Array.isArray(filter)) {
                 layers[0].filter = filter;
                 layers[1].filter = filter;
             }
         } else if (type === 'Line') {
             layers = [
                 {
-                    id: `${schema}.${table}-network-outline`,
-                    type: 'line',
-                    source: sourceName,
-                    'source-layer': sourceLayer,
-                    layout: {
-                        'line-join': 'round',
-                        'line-cap': 'round'
-                    },
-                    paint: {
-                        'line-width': ['interpolate', ['exponential', 1.5], ['zoom'],
-                            14, 2,
-                            20, 30
-                        ],
-                        'line-color': '#f2a787',
-                        'line-opacity': ['interpolate', ['linear'], ['zoom'],
-                            14, 0.7,
-                            22, 1
-                        ]
-                    },
-                    filter
+                    id: `${schema}.${table}-network-outline`,                type: 'line',
+                source: sourceName,
+                'source-layer': sourceLayer,
+                layout: {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                paint: {
+                    'line-width': ['interpolate', ['exponential', 1.5], ['zoom'],
+                        14, 2,
+                        20, 30
+                    ],
+                    'line-color': '#f2a787',
+                    'line-opacity': ['interpolate', ['linear'], ['zoom'],
+                        14, 0.7,
+                        22, 1
+                    ]
+                },
+                ...(Array.isArray(filter) ? { filter } : {})
                 },
                 {
                     id: `${schema}.${table}-network-fill`,
@@ -1330,26 +1332,85 @@ document.addEventListener('DOMContentLoaded', () => {
                     ]
                 }
             }];
-        }
+        }        // Add source and layers to map
+        try {
+            // Remove existing layers and source if they exist
+            if (map.getSource(sourceName)) {
+                layers.forEach(layer => {
+                    if (map.getLayer(layer.id)) {
+                        map.removeLayer(layer.id);
+                    }
+                });
+                map.removeSource(sourceName);
+            }
 
-        // Add source and layers to map
-        if (map.getSource(sourceName)) {
-            // Remove layers first
+            // Add new source
+            map.addSource(sourceName, sourceDef);
+            console.log(`Added source: ${sourceName}`, sourceDef);            // Add each layer with debug logging
             layers.forEach(layer => {
-                if (map.getLayer(layer.id)) {
-                    map.removeLayer(layer.id);
+                try {
+                    map.addLayer(layer);
+                    console.log(`Successfully added layer: ${layer.id}`, {
+                        id: layer.id,
+                        source: layer.source,
+                        'source-layer': layer['source-layer'],
+                        filter: layer.filter
+                    });
+
+                    // Verify the layer was added
+                    const addedLayer = map.getLayer(layer.id);
+                    if (addedLayer) {
+                        console.log(`Layer ${layer.id} verified on map:`, addedLayer);
+                    } else {
+                        console.warn(`Layer ${layer.id} not found after adding`);
+                    }
+
+                    // Check if source is loaded
+                    const source = map.getSource(sourceName);
+                    if (source) {
+                        console.log(`Source ${sourceName} is loaded:`, source);
+                    } else {
+                        console.warn(`Source ${sourceName} not found`);
+                    }
+                } catch (error) {
+                    console.error(`Error adding layer ${layer.id}:`, error);
                 }
             });
-            map.removeSource(sourceName);
+
+            map.on('error', (e) => {
+                if (e.error && e.error.message.includes(sourceName)) {
+                    console.error(`Tile loading error for ${sourceName}:`, e.error);
+                }
+            });
+
+            // Update tracking list only if layer was successfully added
+            const existingLayerIndex = layerList.findIndex(l => l.name === `${schema}.${table}`);
+            if (existingLayerIndex >= 0) {
+                layerList[existingLayerIndex] = {
+                    name: `${schema}.${table}`,
+                    schema,
+                    table,
+                    type,
+                    geometryType,
+                    visible: true
+                };
+            } else {
+                layerList.push({
+                    name: `${schema}.${table}`,
+                    schema,
+                    table,
+                    type,
+                    geometryType,
+                    visible: true
+                });
+            }
+
+            // Update UI
+            renderLayerList();
+            renderStyleDropdown();
+        } catch (error) {
+            console.error('Error adding layer to map:', error);
         }
-
-        // Add new source
-        map.addSource(sourceName, sourceDef);
-
-        // Add each layer
-        layers.forEach(layer => {
-            map.addLayer(layer);
-        });
 
         // Log the definitions
         const logObj = {
@@ -1413,6 +1474,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderStyleDropdown();
             }
         });
-        // ...existing code...
+
+    }
+
+    async function updateLayerFilter(layerName, filterField) {
+        const layer = layerList.find(l => l.name === layerName);
+        if (!layer) return;
+
+        // Get fields and create new filter
+        const fields = await getFieldList(layer.schema, layer.table);
+        const newFilter = await createLayerFilter(fields, filterField);
+        
+        console.log('Updating filter for layer:', layer.name, 'with new filter:', newFilter);
+
+        // Find all Mapbox layer IDs for this layer
+        const layerIds = [];
+        if (layer.type === 'Fill') {
+            layerIds.push(
+                `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-fill`,
+                `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-outline`
+            );
+        } else if (layer.type === 'Line') {
+            layerIds.push(
+                `${layer.schema}.${layer.table}-network-outline`,
+                `${layer.schema}.${layer.table}-network-fill`
+            );
+        } else if (layer.type === 'Symbol') {
+            layerIds.push(`${layer.schema}.${layer.table}-symbols`);
+        } else if (layer.type === 'Circle') {
+            layerIds.push(`${layer.schema}.${layer.table}-circles`);
+        } else if (layer.type === 'Heatmap') {
+            layerIds.push(`${layer.schema}.${layer.table}-heat`);
+        }        // Update filter for each layer
+        layerIds.forEach(id => {
+            if (map.getLayer(id)) {
+                console.log('Updating filter for layer ID:', id);
+                map.setFilter(id, newFilter);
+                
+                // Get and log the updated layer definition
+                const layerDef = map.getLayer(id);
+                const fullLayerDef = {
+                    id: layerDef.id,
+                    type: layerDef.type,
+                    source: layerDef.source,
+                    'source-layer': layerDef['source-layer'],
+                    filter: newFilter,  // Show the newly applied filter
+                    paint: layerDef.paint
+                };
+
+                // Add layout if it exists
+                if (layerDef.layout) {
+                    fullLayerDef.layout = layerDef.layout;
+                }                // Format and print the layer definition in a clear, highly visible format
+                const layerDefString = JSON.stringify(fullLayerDef, null, 2);
+                const header = '🔄 LAYER UPDATE 🔄';
+                const separator = '='.repeat(50);
+                
+                console.group('%cLayer Filter Update', 'font-size: 16px; color: #2196F3; font-weight: bold;');
+                console.log('%c' + separator, 'color: #FF4081; font-weight: bold;');
+                console.log('%c' + header, 'font-size: 14px; color: #4CAF50; font-weight: bold; background: #E8F5E9; padding: 5px; border-radius: 3px;');
+                console.log('%c⚡ Layer ID: %c' + id, 'color: #FF4081; font-weight: bold;', 'color: #000000;');
+                console.log('\n%cLayer Definition:', 'font-size: 12px; color: #2196F3; font-weight: bold;');
+                console.log(fullLayerDef);
+                console.log('%c' + separator + '\n', 'color: #FF4081; font-weight: bold;');
+                console.groupEnd();
+            }
+        });
     }
 });
