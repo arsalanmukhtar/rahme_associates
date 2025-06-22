@@ -1061,50 +1061,64 @@ document.addEventListener('DOMContentLoaded', () => {
         return [];
     }
 
-    async function addLayerToMap(schema, table, type, geometryType) {
-        // Get filter field from style config dropdown if available
-        const stylePanelFieldSelect = document.querySelector('#layer-field-select');
-        
-        // Check if table has user_id column
-        const fields = await getFieldList(schema, table);
+    async function createLayerFilter(fields, filterField) {
+        // If no filter field selected, return null
+        if (!filterField) {
+            console.log('No filter field selected, filter will be null');
+            return null;
+        }
+
+        // Check for user_id
         const hasUserId = fields.some(f => f.name === 'user_id');
+        console.log('Table has user_id:', hasUserId);
 
-        // Initialize filter as null
-        let filter = null;
+        // Basic filter on selected field
+        let filter = ['!=', ['get', filterField], null];
+        console.log('Basic filter created:', filter);
 
-        // Only create filter if a field is selected in the style panel
-        if (stylePanelFieldSelect && stylePanelFieldSelect.value) {
-            const filterField = stylePanelFieldSelect.value;
-            // Basic filter on selected field
-            filter = ['!=', ['get', filterField], null];
-
-            // If table has user_id, add user_id filter
-            if (hasUserId) {
-                const authToken = localStorage.getItem('authToken');
-                try {
-                    const userResp = await fetch('/api/v1/users/me', {
-                        headers: { 'Authorization': `Bearer ${authToken}` }
-                    });
-                    if (userResp.ok) {
-                        const userData = await userResp.json();
-                        filter = ['all',
-                            ['!=', ['get', filterField], null],
-                            ['==', ['get', 'user_id'], userData.id]
-                        ];
-                    }
-                } catch (e) {
-                    console.error('Error fetching user data for filter:', e);
+        // If table has user_id, add user_id filter
+        if (hasUserId) {
+            const authToken = localStorage.getItem('authToken');
+            try {
+                const userResp = await fetch('/api/v1/users/me', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (userResp.ok) {
+                    const userData = await userResp.json();
+                    filter = ['all',
+                        ['!=', ['get', filterField], null],
+                        ['==', ['get', 'user_id'], userData.id]
+                    ];
+                    console.log('Combined filter with user_id:', filter);
                 }
+            } catch (e) {
+                console.error('Error fetching user data for filter:', e);
             }
         }
 
-    const sourceName = `${table.toLowerCase()}_tiles`;
-    const sourceLayer = `${schema.toLowerCase()}.${table.toLowerCase()}`;
-    const sourceDef = {
-        type: 'vector',
-        tiles: [`http://host:port/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
-        maxzoom: 20
-    };
+        return filter;
+    }
+
+    async function addLayerToMap(schema, table, type, geometryType) {
+        console.log('Adding layer with parameters:', { schema, table, type, geometryType });
+        
+        // Get filter field from style config dropdown if available
+        const stylePanelFieldSelect = document.querySelector('#layer-field-select');
+        const filterField = stylePanelFieldSelect?.value;
+        
+        // Get fields and create filter
+        const fields = await getFieldList(schema, table);
+        const filter = await createLayerFilter(fields, filterField);
+        
+        console.log('Layer filter:', filter);
+
+        const sourceName = `${table.toLowerCase()}_tiles`;
+        const sourceLayer = `${schema.toLowerCase()}.${table.toLowerCase()}`;
+        const sourceDef = {
+            type: 'vector',
+            tiles: [`http://host:port/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
+            maxzoom: 20
+        };
 
         let layers = [];
         if (type === 'Fill') {
