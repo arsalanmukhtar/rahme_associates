@@ -332,9 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Network error fetching initial user data for map:', error);
-        }
-
-        map = new mapboxgl.Map({
+        }        map = new mapboxgl.Map({
             container: 'map',
             style: 'mapbox://styles/mapbox/streets-v11',
             center: initialCenter,
@@ -344,6 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
             attributionControl: false, // Explicitly disable attribution control
             hash: true // Enable hash in URL for easy sharing
         });
+
+        // Initialize geocoding search
+        initGeocoding();
 
         marker = new mapboxgl.Marker()
             .setLngLat(initialCenter)
@@ -756,19 +757,47 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             ul.appendChild(li);
         });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        // Attach events after rendering
+        if (typeof lucide !== 'undefined') lucide.createIcons();        // Attach events after rendering
         ul.querySelectorAll('.toggle-layer-btn').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const idx = +btn.dataset.idx;
-                layerList[idx].visible = !layerList[idx].visible;
+                const layer = layerList[idx];
+                layer.visible = !layer.visible;
+
+                // Find all Mapbox layer IDs for this layer
+                const layerIds = [];
+                if (layer.type === 'Fill') {
+                    layerIds.push(
+                        `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-fill`,
+                        `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-outline`
+                    );
+                } else if (layer.type === 'Line') {
+                    layerIds.push(
+                        `${layer.schema}.${layer.table}-network-outline`,
+                        `${layer.schema}.${layer.table}-network-fill`
+                    );
+                } else if (layer.type === 'Symbol') {
+                    layerIds.push(`${layer.schema}.${layer.table}-symbols`);
+                } else if (layer.type === 'Circle') {
+                    layerIds.push(`${layer.schema}.${layer.table}-circles`);
+                } else if (layer.type === 'Heatmap') {
+                    layerIds.push(`${layer.schema}.${layer.table}-heat`);
+                }
+
+                // Toggle visibility for each layer
+                layerIds.forEach(id => {
+                    if (map.getLayer(id)) {
+                        map.setLayoutProperty(id, 'visibility', layer.visible ? 'visible' : 'none');
+                    }
+                });
+
                 renderLayerList();
                 renderStyleDropdown();
                 console.log(`Layer toggled:`, {
-                    name: remapTableName(layerList[idx].table),
-                    type: remapType(layerList[idx].type),
-                    visible: layerList[idx].visible
+                    name: remapTableName(layer.table),
+                    type: remapType(layer.type),
+                    visible: layer.visible
                 });
             };
         });
@@ -776,7 +805,50 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const idx = +btn.dataset.idx;
-                const removed = layerList.splice(idx, 1)[0];
+                const removed = layerList[idx];
+
+                // Get source and layer IDs
+                const sourceName = `${removed.table.toLowerCase()}_tiles`;
+                const layerIds = [];
+                if (removed.type === 'Fill') {
+                    layerIds.push(
+                        `${removed.schema.toLowerCase()}.${removed.table.toLowerCase()}-fill`,
+                        `${removed.schema.toLowerCase()}.${removed.table.toLowerCase()}-outline`
+                    );
+                } else if (removed.type === 'Line') {
+                    layerIds.push(
+                        `${removed.schema}.${removed.table}-network-outline`,
+                        `${removed.schema}.${removed.table}-network-fill`
+                    );
+                } else if (removed.type === 'Symbol') {
+                    layerIds.push(`${removed.schema}.${removed.table}-symbols`);
+                } else if (removed.type === 'Circle') {
+                    layerIds.push(`${removed.schema}.${removed.table}-circles`);
+                } else if (removed.type === 'Heatmap') {
+                    layerIds.push(`${removed.schema}.${removed.table}-heat`);
+                }
+
+                // Remove layers and source from map
+                try {
+                    // Remove layers first
+                    layerIds.forEach(id => {
+                        if (map.getLayer(id)) {
+                            map.removeLayer(id);
+                            console.log(`Removed layer: ${id}`);
+                        }
+                    });
+
+                    // Then remove source
+                    if (map.getSource(sourceName)) {
+                        map.removeSource(sourceName);
+                        console.log(`Removed source: ${sourceName}`);
+                    }
+                } catch (error) {
+                    console.error('Error removing layers/source:', error);
+                }
+
+                // Remove from layerList
+                layerList.splice(idx, 1);
                 renderLayerList();
                 renderStyleDropdown();
                 console.log(`Layer removed:`, {
@@ -806,12 +878,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             option.textContent = `${colorDot} ${remapTableName(layer.table)} [${remapType(layer.type)}]`;
             select.appendChild(option);
-        });
-        // Restore filter row rendering in style panel (but not type row)
+        });        // Render the filter row (but it won't affect the layer)
         renderLayerTypeRow(select.value, { onlyFilter: true });
         select.onchange = async () => {
             await fetchAndSetLayerFields(select.value);
             renderLayerTypeRow(select.value, { onlyFilter: true });
+            // Update user_id filter if needed
+            await updateLayerFilter(select.value);
         };
         // Fetch fields for the initially selected layer (if any)
         if (select.value) {
@@ -868,16 +941,12 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             // Insert after the layer select
             const layerSelectDiv = sidebarContent.querySelector('#style-layer-select').parentElement.parentElement;
-            layerSelectDiv.parentNode.insertBefore(fieldRow, layerSelectDiv.nextSibling);
-
-            // Add change event listener to filter select
+            layerSelectDiv.parentNode.insertBefore(fieldRow, layerSelectDiv.nextSibling);            // Add change event listener to filter select
             const filterSelect = fieldRow.querySelector('#layer-field-select');
             filterSelect.addEventListener('change', async () => {
-                const selectedLayerName = sidebarContent.querySelector('#style-layer-select').value;
-                const selectedField = filterSelect.value;
-                if (selectedLayerName) {
-                    await updateLayerFilter(selectedLayerName, selectedField);
-                }
+                // Do nothing with the filter selection for now
+                // We'll use this for something else later
+                console.log('Filter field selected:', filterSelect.value);
             });
         } else {
             // ...existing code for full type+filter row...
@@ -1068,16 +1137,15 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching fields:', e);
         }
         return [];
-    }    async function createLayerFilter(fields, filterField) {
+    }    async function createLayerFilter(fields) {
         // Start with a valid default filter that accepts everything
         let filter = ["all"];
         
-        // Check for user_id first
+        // Check for user_id
         const hasUserId = fields.some(f => f.name === 'user_id');
         console.log('Table has user_id:', hasUserId);
 
-        // If table has user_id, always get the current user's ID and create a filter
-        let userIdFilter = null;
+        // If table has user_id, get the current user's ID and create a filter
         if (hasUserId) {
             const authToken = localStorage.getItem('authToken');
             try {
@@ -1086,8 +1154,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (userResp.ok) {
                     const userData = await userResp.json();
-                    userIdFilter = ['==', ['get', 'user_id'], userData.id];
-                    console.log('Created user_id filter:', userIdFilter);
+                    filter.push(['==', ['get', 'user_id'], userData.id]);
+                    console.log('Created user_id filter:', filter);
                 } else {
                     console.error('Failed to fetch user data for filter, status:', userResp.status);
                     return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
@@ -1096,21 +1164,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error fetching user data for filter:', e);
                 return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
             }
-        }
-
-        // Create filter based on selected field if any
-        let fieldFilter = null;
-        if (filterField) {
-            fieldFilter = ['has', ['get', filterField]];
-            console.log('Created field filter:', fieldFilter);
-        }        // For tables with user_id, always include the user_id filter
-        if (hasUserId && userIdFilter) {
-            filter.push(userIdFilter);
-        }
-        
-        // Add field filter if available
-        if (fieldFilter) {
-            filter.push(fieldFilter);
         }
         
         // Log the final filter
@@ -1122,14 +1175,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function addLayerToMap(schema, table, type, geometryType) {
         console.log('Adding layer with parameters:', { schema, table, type, geometryType });
-        
-        // Get filter field from style config dropdown if available
-        const stylePanelFieldSelect = document.querySelector('#layer-field-select');
-        const filterField = stylePanelFieldSelect?.value;
-        
-        // Get fields and create filter
+          // Get fields and create filter (only for user_id)
         const fields = await getFieldList(schema, table);
-        const filter = await createLayerFilter(fields, filterField);
+        const filter = await createLayerFilter(fields);
         
         console.log('Layer filter:', filter);
 
@@ -1258,9 +1306,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         16, ['literal', [0, -2]],
                         17, ['literal', [0, -2.5]],
                         18, ['literal', [0, -3]]
-                    ],
-                    'icon-anchor': 'center',
-                    'text-field': ['get', filterField],
+                    ],                    'icon-anchor': 'center',
+                    'text-field': ['get', 'road_id'], // Default to 'road_id' field or empty string if not available
                     'text-size': [
                         'interpolate', ['linear'], ['zoom'],
                         16, 7,
@@ -1475,15 +1522,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-    }
-
-    async function updateLayerFilter(layerName, filterField) {
+    }    async function updateLayerFilter(layerName) {
         const layer = layerList.find(l => l.name === layerName);
         if (!layer) return;
 
-        // Get fields and create new filter
+        // Get fields and create new filter (only for user_id)
         const fields = await getFieldList(layer.schema, layer.table);
-        const newFilter = await createLayerFilter(fields, filterField);
+        const newFilter = await createLayerFilter(fields);
         
         console.log('Updating filter for layer:', layer.name, 'with new filter:', newFilter);
 
@@ -1541,4 +1586,93 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Geocoding search elements
+    const geocodingSearch = document.getElementById('geocoding-search');
+    const geocodingResults = document.getElementById('geocoding-results');
+    let debounceTimeout;
+
+    // Initialize geocoding search functionality
+    function initGeocoding() {
+        geocodingSearch.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            clearTimeout(debounceTimeout);
+
+            if (!query) {
+                geocodingResults.innerHTML = '';
+                geocodingResults.classList.add('hidden');
+                return;
+            }
+
+            // Debounce the search to avoid too many API calls
+            debounceTimeout = setTimeout(() => {
+                searchLocation(query);
+            }, 300);
+        });
+
+        // Close results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!geocodingSearch.contains(e.target) && !geocodingResults.contains(e.target)) {
+                geocodingResults.classList.add('hidden');
+            }
+        });
+    }
+
+    // Search location using Mapbox Geocoding API
+    async function searchLocation(query) {
+        try {
+            const endpoint = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json`;
+            const params = new URLSearchParams({
+                access_token: mapboxAccessToken,
+                types: 'place,address,locality,neighborhood',
+                limit: 5,
+                country: 'AU', // Restrict to Australia
+            });
+
+            const response = await fetch(`${endpoint}?${params}`);
+            const data = await response.json();
+
+            // Clear previous results
+            geocodingResults.innerHTML = '';
+            
+            if (data.features.length === 0) {
+                geocodingResults.innerHTML = `
+                    <div class="px-4 py-2 text-sm text-gray-500">
+                        No results found
+                    </div>`;
+                geocodingResults.classList.remove('hidden');
+                return;
+            }
+
+            // Display results
+            data.features.forEach(feature => {
+                const div = document.createElement('div');
+                div.className = 'px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer';
+                div.innerHTML = feature.place_name;
+                div.addEventListener('click', () => {
+                    // Fly to the selected location
+                    map.flyTo({
+                        center: feature.center,
+                        zoom: 15,
+                        essential: true
+                    });
+                    geocodingSearch.value = feature.place_name;
+                    geocodingResults.classList.add('hidden');
+                });
+                geocodingResults.appendChild(div);
+            });
+
+            geocodingResults.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('Error searching location:', error);
+            geocodingResults.innerHTML = `
+                <div class="px-4 py-2 text-sm text-red-500">
+                    Error searching location
+                </div>`;
+            geocodingResults.classList.remove('hidden');
+        }
+    }
+
+    initGeocoding();
 });
