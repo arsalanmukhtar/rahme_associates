@@ -776,8 +776,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     layerIds.push(
                         `${layer.schema}.${layer.table}-network-outline`,
                         `${layer.schema}.${layer.table}-network-fill`
-                    );
-                } else if (layer.type === 'Symbol') {
+                    );                } else if (layer.type === 'Symbol') {
                     layerIds.push(`${layer.schema}.${layer.table}-symbols`);
                 } else if (layer.type === 'Circle') {
                     layerIds.push(`${layer.schema}.${layer.table}-circles`);
@@ -1083,13 +1082,75 @@ document.addEventListener('DOMContentLoaded', () => {
             fig.innerHTML = `
                 <img src="${bm.img}" alt="${bm.label}" class="w-16 h-16 object-cover rounded-lg border-2 border-transparent group-hover:border-blue-400 transition-all duration-200">
                 <figcaption class="mt-1 text-xs text-gray-700">${bm.label}</figcaption>
-            `;
-            fig.addEventListener('click', (e) => {
+            `;            fig.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 if (window.map && typeof window.map.setStyle === 'function') {
+                    // Capture the current state before style change
+                    const mapState = {
+                        center: window.map.getCenter(),
+                        zoom: window.map.getZoom(),
+                        bearing: window.map.getBearing(),
+                        pitch: window.map.getPitch(),
+                        layers: layerList.map(layer => ({...layer}))
+                    };
+
+                    // Change the style
                     window.map.setStyle(bm.style);
+
+                    // When the style loads, restore our layers
+                    window.map.once('style.load', () => {
+                        // Restore each layer
+                        mapState.layers.forEach(async layer => {
+                            await addLayerToMap(layer.schema, layer.table, layer.type, layer.geometryType);
+                            
+                            // Restore visibility state if it was hidden
+                            if (!layer.visible) {
+                                const layerIds = getLayerIds(layer);
+                                layerIds.forEach(id => {
+                                    if (window.map.getLayer(id)) {
+                                        window.map.setLayoutProperty(id, 'visibility', 'none');
+                                    }
+                                });
+                            }
+                        });
+
+                        // Restore map position
+                        window.map.setCenter(mapState.center);
+                        window.map.setZoom(mapState.zoom);
+                        window.map.setBearing(mapState.bearing);
+                        window.map.setPitch(mapState.pitch);
+                    });
                 } else if (typeof map !== 'undefined' && typeof map.setStyle === 'function') {
+                    // Same logic for map object
+                    const mapState = {
+                        center: map.getCenter(),
+                        zoom: map.getZoom(),
+                        bearing: map.getBearing(),
+                        pitch: map.getPitch(),
+                        layers: layerList.map(layer => ({...layer}))
+                    };
+
                     map.setStyle(bm.style);
+
+                    map.once('style.load', () => {
+                        mapState.layers.forEach(async layer => {
+                            await addLayerToMap(layer.schema, layer.table, layer.type, layer.geometryType);
+                            
+                            if (!layer.visible) {
+                                const layerIds = getLayerIds(layer);
+                                layerIds.forEach(id => {
+                                    if (map.getLayer(id)) {
+                                        map.setLayoutProperty(id, 'visibility', 'none');
+                                    }
+                                });
+                            }
+                        });
+
+                        map.setCenter(mapState.center);
+                        map.setZoom(mapState.zoom);
+                        map.setBearing(mapState.bearing);
+                        map.setPitch(mapState.pitch);
+                    });
                 }
                 closeBasemapOptions();
             });
@@ -1545,11 +1606,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 `${layer.schema}.${layer.table}-network-fill`
             );
         } else if (layer.type === 'Symbol') {
-            layerIds.push(`${layer.schema}.${layer.table}-symbols`);
+            layerIds.push(`${layer.schema}.${table}-symbols`);
         } else if (layer.type === 'Circle') {
-            layerIds.push(`${layer.schema}.${layer.table}-circles`);
+            layerIds.push(`${layer.schema}.${table}-circles`);
         } else if (layer.type === 'Heatmap') {
-            layerIds.push(`${layer.schema}.${layer.table}-heat`);
+            layerIds.push(`${layer.schema}.${table}-heat`);
         }        // Update filter for each layer
         layerIds.forEach(id => {
             if (map.getLayer(id)) {
