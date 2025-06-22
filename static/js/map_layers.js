@@ -159,9 +159,9 @@ export function vectorFillLayer(id, source, sourceLayer, paint = {}, filter = nu
 
 // Geometry type to allowed layer types mapping
 export const GEOMETRY_LAYER_TYPES = {
-    Point: ['circle', 'symbol', 'heatmap'],
-    LineString: ['line'],
-    Polygon: ['fill']
+    Point: ['Circle', 'Symbol', 'Heatmap'],
+    LineString: ['Line'],
+    Polygon: ['Fill']
 };
 
 // Example usage (in your map_dashboard.js):

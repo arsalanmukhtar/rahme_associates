@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const table = tableSelect.value;
                 const type = typeSelect.value;
                 if (schema && table && type) {
-                    // Fetch geometry type again for logging
+                    // Fetch geometry type
                     const authToken = localStorage.getItem('authToken');
                     let geometryType = 'Point';
                     try {
@@ -629,13 +629,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (geomData.geometryType) {
                                 const g = geomData.geometryType.toLowerCase();
                                 if (g.includes('point')) geometryType = 'Point';
-                                else if (g.includes('linestring')) geometryType = 'LineString';
+                                else if (g.includes('line')) geometryType = 'LineString';
                                 else if (g.includes('polygon')) geometryType = 'Polygon';
                             }
                         }
                     } catch (e) { }
+
+                    // Add layer to list
                     const layerName = `${schema}.${table}`;
-                    // Add the layer to the list
                     layerList.push({
                         name: layerName,
                         schema,
@@ -644,9 +645,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         geometryType,
                         visible: true
                     });
+
+                    // Add source and layers to map
+                    await addLayerToMap(schema, table, type, geometryType);
+
+                    // Update UI
                     renderLayerList();
                     renderStyleDropdown();
-                    console.log('Add Layer:', { schema: remapSchemaName(schema), table: remapTableName(table), geometryType, type: remapType(type) });
                 }
             });
         } else if (sidebarMode === 'style') {
@@ -1039,4 +1044,345 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // If you set font-family in JS, use Barlow:
     document.body.style.fontFamily = "'Barlow', sans-serif";
+
+    async function getFieldList(schema, table) {
+        const authToken = localStorage.getItem('authToken');
+        try {
+            const resp = await fetch(`/api/v1/map-data/fields/${schema}/${table}`, {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+            });
+            if (resp.ok) {
+                const data = await resp.json();
+                return data.fields || [];
+            }
+        } catch (e) {
+            console.error('Error fetching fields:', e);
+        }
+        return [];
+    }
+
+    async function addLayerToMap(schema, table, type, geometryType) {
+        // Get filter field from style config dropdown if available
+        const stylePanelFieldSelect = document.querySelector('#layer-field-select');
+        
+        // Check if table has user_id column
+        const fields = await getFieldList(schema, table);
+        const hasUserId = fields.some(f => f.name === 'user_id');
+
+        // Initialize filter as null
+        let filter = null;
+
+        // Only create filter if a field is selected in the style panel
+        if (stylePanelFieldSelect && stylePanelFieldSelect.value) {
+            const filterField = stylePanelFieldSelect.value;
+            // Basic filter on selected field
+            filter = ['!=', ['get', filterField], null];
+
+            // If table has user_id, add user_id filter
+            if (hasUserId) {
+                const authToken = localStorage.getItem('authToken');
+                try {
+                    const userResp = await fetch('/api/v1/users/me', {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (userResp.ok) {
+                        const userData = await userResp.json();
+                        filter = ['all',
+                            ['!=', ['get', filterField], null],
+                            ['==', ['get', 'user_id'], userData.id]
+                        ];
+                    }
+                } catch (e) {
+                    console.error('Error fetching user data for filter:', e);
+                }
+            }
+        }
+
+    const sourceName = `${table.toLowerCase()}_tiles`;
+    const sourceLayer = `${schema.toLowerCase()}.${table.toLowerCase()}`;
+    const sourceDef = {
+        type: 'vector',
+        tiles: [`http://host:port/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
+        maxzoom: 20
+    };
+
+        let layers = [];
+        if (type === 'Fill') {
+            console.log(`Adding Fill layer for ${schema}.${table}`);
+            layers = [
+                {
+                    id: `${schema.toLowerCase()}.${table.toLowerCase()}-fill`,
+                    type: 'fill',
+                    source: sourceName,
+                    'source-layer': sourceLayer,
+                    paint: {
+                        'fill-opacity': 0.2,
+                        'fill-color': '#ffffff'
+                    }
+                },
+                {
+                    id: `${schema.toLowerCase()}.${table.toLowerCase()}-outline`,
+                    type: 'line',
+                    source: sourceName,
+                    'source-layer': sourceLayer,
+                    paint: {
+                        'line-color': '#d2dae2',
+                        'line-width': 0.3,
+                        'line-opacity': 0.7
+                    }
+                }
+            ];
+
+            // Add filter to both layers if it exists
+            if (filter) {
+                layers[0].filter = filter;
+                layers[1].filter = filter;
+            }
+        } else if (type === 'Line') {
+            layers = [
+                {
+                    id: `${schema}.${table}-network-outline`,
+                    type: 'line',
+                    source: sourceName,
+                    'source-layer': sourceLayer,
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-width': ['interpolate', ['exponential', 1.5], ['zoom'],
+                            14, 2,
+                            20, 30
+                        ],
+                        'line-color': '#f2a787',
+                        'line-opacity': ['interpolate', ['linear'], ['zoom'],
+                            14, 0.7,
+                            22, 1
+                        ]
+                    },
+                    filter
+                },
+                {
+                    id: `${schema}.${table}-network-fill`,
+                    type: 'line',
+                    source: sourceName,
+                    'source-layer': sourceLayer,
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-width': ['interpolate', ['exponential', 1.5], ['zoom'],
+                            14, 1.5,
+                            20, 20
+                        ],
+                        'line-color': '#f0d9ce',
+                        'line-opacity': ['interpolate', ['linear'], ['zoom'],
+                            14, 0.5,
+                            22, 1
+                        ]
+                    },
+                    filter
+                }
+            ];
+        } else if (type === 'Symbol') {
+            layers = [{
+                id: `${schema}.${table}-symbols`,
+                type: 'symbol',
+                source: sourceName,
+                'source-layer': sourceLayer,
+                filter,
+                minzoom: 16,
+                layout: {
+                    'icon-image': [
+                        'match', ['get', 'icon'],
+                        'Accepted', 'accepted',
+                        'Agreement Prep', 'agreement_prep',
+                        'Agreement Signed', 'agreement_signed',
+                        'Built', 'built',
+                        'Construction', 'construction',
+                        'Countered', 'not_home',
+                        'For Sale', 'for_sale',
+                        'Not Home', 'not_home',
+                        'Not Interested', 'not_interested',
+                        'Not Interested2', 'not_interested2',
+                        'Offer Given', 'offer_given',
+                        'Rejected Offer', 'rejected_offer',
+                        'Settled', 'settled',
+                        'Sold', 'sold',
+                        'Tenanted', 'tenanted',
+                        'Unknown', 'unknown',
+                        'Wants Offer', 'wants_offer',
+                        ''
+                    ],
+                    'icon-size': [
+                        'interpolate', ['linear'], ['zoom'],
+                        16, 0.05,
+                        19, 0.5,
+                        22, 0.7
+                    ],
+                    'icon-offset': [
+                        'interpolate', ['linear'], ['zoom'],
+                        16, ['literal', [0, -2]],
+                        17, ['literal', [0, -2.5]],
+                        18, ['literal', [0, -3]]
+                    ],
+                    'icon-anchor': 'center',
+                    'text-field': ['get', filterField],
+                    'text-size': [
+                        'interpolate', ['linear'], ['zoom'],
+                        16, 7,
+                        19, 11,
+                        22, 14
+                    ],
+                    'text-anchor': 'center',
+                    'text-offset': [
+                        'interpolate', ['linear'], ['zoom'],
+                        16, ['literal', [0, 2]],
+                        17, ['literal', [0, 2.5]],
+                        18, ['literal', [0, 3]]
+                    ]
+                },
+                paint: {
+                    'text-color': '#2c2c2c'
+                }
+            }];
+        } else if (type === 'Circle') {
+            layers = [{
+                id: `${schema}.${table}-circles`,
+                type: 'circle',
+                source: sourceName,
+                'source-layer': sourceLayer,
+                filter,
+                paint: {
+                    'circle-radius': [
+                        'interpolate', ['linear'], ['zoom'],
+                        12, 2,
+                        22, 12
+                    ],
+                    'circle-color': '#FF0000',
+                    'circle-opacity': 0.7,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#FFFFFF'
+                }
+            }];
+        } else if (type === 'Heatmap') {
+            layers = [{
+                id: `${schema}.${table}-heat`,
+                type: 'heatmap',
+                source: sourceName,
+                'source-layer': sourceLayer,
+                filter,
+                paint: {
+                    'heatmap-intensity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        0, 1,
+                        9, 3
+                    ],
+                    'heatmap-color': [
+                        'interpolate', ['linear'], ['heatmap-density'],
+                        0, 'rgba(33,102,172,0)',
+                        0.2, 'rgb(103,169,207)',
+                        0.4, 'rgb(209,229,240)',
+                        0.6, 'rgb(253,219,199)',
+                        0.8, 'rgb(239,138,98)',
+                        1, 'rgb(178,24,43)'
+                    ],
+                    'heatmap-radius': [
+                        'interpolate', ['linear'], ['zoom'],
+                        0, 2,
+                        9, 20
+                    ],
+                    'heatmap-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        7, 1,
+                        9, 0.75
+                    ]
+                }
+            }];
+        }
+
+        // Add source and layers to map
+        if (map.getSource(sourceName)) {
+            // Remove layers first
+            layers.forEach(layer => {
+                if (map.getLayer(layer.id)) {
+                    map.removeLayer(layer.id);
+                }
+            });
+            map.removeSource(sourceName);
+        }
+
+        // Add new source
+        map.addSource(sourceName, sourceDef);
+
+        // Add each layer
+        layers.forEach(layer => {
+            map.addLayer(layer);
+        });
+
+        // Log the definitions
+        const logObj = {
+            addLayer: {
+                schema: remapSchemaName(schema),
+                table: remapTableName(table),
+                geometryType,
+                type: remapType(type)
+            },
+            source: { [sourceName]: sourceDef },
+            layers
+        };
+        console.log('Adding layer:', logObj);
+        console.log('Layer definitions:', JSON.stringify(layers, null, 2));
+
+        return { sourceDef, layers };
+    }
+
+    // Update the Add Layer button click handler
+    if (sidebarMode === 'layers') {
+        // ...existing code...
+        addLayerBtn.addEventListener('click', async () => {
+            const schema = schemaSelect.value;
+            const table = tableSelect.value;
+            const type = typeSelect.value;
+            if (schema && table && type) {
+                // Fetch geometry type
+                const authToken = localStorage.getItem('authToken');
+                let geometryType = 'Point';
+                try {
+                    const geomResp = await fetch(`/api/v1/map-data/geometry-type/${schema}/${table}`, {
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    });
+                    if (geomResp.ok) {
+                        const geomData = await geomResp.json();
+                        if (geomData.geometryType) {
+                            const g = geomData.geometryType.toLowerCase();
+                            if (g.includes('point')) geometryType = 'Point';
+                            else if (g.includes('line')) geometryType = 'LineString';
+                            else if (g.includes('polygon')) geometryType = 'Polygon';
+                        }
+                    }
+                } catch (e) { }
+
+                // Add layer to list
+                const layerName = `${schema}.${table}`;
+                layerList.push({
+                    name: layerName,
+                    schema,
+                    table,
+                    type,
+                    geometryType,
+                    visible: true
+                });
+
+                // Add source and layers to map
+                await addLayerToMap(schema, table, type, geometryType);
+
+                // Update UI
+                renderLayerList();
+                renderStyleDropdown();
+            }
+        });
+        // ...existing code...
+    }
 });
