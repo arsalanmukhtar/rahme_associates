@@ -1059,24 +1059,13 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching fields:', e);
         }
         return [];
-    }
-
-    async function createLayerFilter(fields, filterField) {
-        // If no filter field selected, return null
-        if (!filterField) {
-            console.log('No filter field selected, filter will be null');
-            return null;
-        }
-
-        // Check for user_id
+    }    async function createLayerFilter(fields, filterField) {
+        // Check for user_id first
         const hasUserId = fields.some(f => f.name === 'user_id');
         console.log('Table has user_id:', hasUserId);
 
-        // Basic filter on selected field
-        let filter = ['!=', ['get', filterField], null];
-        console.log('Basic filter created:', filter);
-
-        // If table has user_id, add user_id filter
+        // If table has user_id, always get the current user's ID and create a filter
+        let userIdFilter = null;
         if (hasUserId) {
             const authToken = localStorage.getItem('authToken');
             try {
@@ -1085,18 +1074,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 if (userResp.ok) {
                     const userData = await userResp.json();
-                    filter = ['all',
-                        ['!=', ['get', filterField], null],
-                        ['==', ['get', 'user_id'], userData.id]
-                    ];
-                    console.log('Combined filter with user_id:', filter);
+                    userIdFilter = ['==', ['get', 'user_id'], userData.id];
+                    console.log('Created user_id filter:', userIdFilter);
+                } else {
+                    console.error('Failed to fetch user data for filter, status:', userResp.status);
+                    return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
                 }
             } catch (e) {
                 console.error('Error fetching user data for filter:', e);
+                return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
             }
         }
 
-        return filter;
+        // Create filter based on selected field if any
+        let fieldFilter = null;
+        if (filterField) {
+            fieldFilter = ['!=', ['get', filterField], null];
+            console.log('Created field filter:', fieldFilter);
+        }
+
+        // For tables with user_id, always include the user_id filter
+        if (hasUserId) {
+            if (fieldFilter) {
+                // Combine user_id filter with field filter
+                const finalFilter = ['all', userIdFilter, fieldFilter];
+                console.log('Combined user_id and field filters:', finalFilter);
+                return finalFilter;
+            } else {
+                // Use only user_id filter
+                console.log('Using only user_id filter:', userIdFilter);
+                return userIdFilter;
+            }
+        } else if (fieldFilter) {
+            // For tables without user_id, use field filter if available
+            console.log('Using only field filter:', fieldFilter);
+            return fieldFilter;
+        }
+
+        // If no filters are applicable, return null
+        return null;
     }
 
     async function addLayerToMap(schema, table, type, geometryType) {
