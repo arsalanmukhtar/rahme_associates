@@ -23,7 +23,3 @@ python postgis2mvt.py --dbname nsw --user postgres --password postgres --query "
 # nsw_landzones
 python postgis2mvt.py --dbname nsw --user postgres --password postgres --schema public --table nsw_landzones --layer nsw_landzones --bbox 150.3243 -33.1542 151.5415 -34.5416 --zoom 8 9 10 11 12 13 14 15 16 17 18
 python postgis2mvt.py --dbname nsw --user postgres --password postgres --query "SELECT * FROM public.nsw_landzones" --layer nsw_landzones --bbox 150.3243 -33.1542 151.5415 -34.5416 --zoom 8 9 10 11 12 13 14 15 16 17 18
-
-
-
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --schema public --table nsw_lots --layer nsw_lots --bbox 150.3243 -33.1542 151.5415 -34.5416 --zoom 13 14 15 16
