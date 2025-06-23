@@ -14,6 +14,9 @@ from app.schemas.user import UserInDB
 # You might need to import settings for mapbox_token, but it's handled in map_dashboard.js directly
 # from app.core.config import settings
 
+import httpx
+from fastapi.responses import StreamingResponse
+
 router = APIRouter()
 
 
@@ -163,3 +166,19 @@ async def get_offers_summary(
     except Exception as e:
         print("Error fetching offers summary:", e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch offers summary")
+
+@router.api_route("/proxy/tiles/{layer}/{z}/{x}/{y}.pbf", methods=["GET"])
+async def proxy_tile(layer: str, z: int, x: int, y: int):
+    """
+    Reverse proxy for tile requests to localhost:3000 to avoid CORS issues.
+    """
+    tile_url = f"http://localhost:3000/tiles/{layer}/{z}/{x}/{y}.pbf"
+    async with httpx.AsyncClient() as client:
+        proxied_response = await client.get(tile_url)
+        headers = dict(proxied_response.headers)
+        # Set CORS header
+        headers["Access-Control-Allow-Origin"] = "*"
+        # Remove hop-by-hop headers if present
+        headers.pop("content-encoding", None)
+        headers.pop("transfer-encoding", None)
+        return Response(content=proxied_response.content, status_code=proxied_response.status_code, headers=headers, media_type="application/x-protobuf")

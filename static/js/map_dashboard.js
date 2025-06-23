@@ -1324,7 +1324,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sourceLayer = `${table.toLowerCase()}`;
         const sourceDef = {
             type: 'vector',
-            tiles: [`http://localhost:3000/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
+            tiles: [`http://localhost:8000/api/v1/map-data/proxy/tiles/${table.toLowerCase()}/{z}/{x}/{y}.pbf`],
             maxzoom: 20
         };
 
