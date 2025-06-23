@@ -89,6 +89,8 @@ def main():
                         help="Bounding box in WGS84: top_left_long top_left_lat bottom_right_long bottom_right_lat") # Updated help text
     parser.add_argument("--zoom", nargs='+', type=int, required=True,
                         help="Space-separated list of zoom levels to generate (e.g., 4 5 6)")
+    parser.add_argument("--port", type=int, default=5432, help="Database port (default: 5432)")
+    parser.add_argument("--host", type=str, default="localhost", help="Database host (default: localhost)")
 
     args = parser.parse_args()
 
@@ -106,12 +108,13 @@ def main():
     try:
         # Establish database connection
         print("="*50)
-        print(f"Connecting to database: {args.dbname} as user: {args.user}...")
+        print(f"Connecting to database: {args.dbname} as user: {args.user} on port: {args.port}...")
         conn = psycopg2.connect(
             dbname=args.dbname,
             user=args.user,
             password=args.password,
-            host="localhost" # Assuming local database, can be made configurable
+            host=args.host,
+            port=args.port
         )
         cur = conn.cursor()
         print("Database connection successful. [✓]")
