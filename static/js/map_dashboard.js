@@ -718,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Layer Group List Logic ---
+    let sortableInstance = null; // Store SortableJS instance globally
     function renderLayerList() {
         const ul = sidebarContent.querySelector('#layer-list');
         ul.innerHTML = '';
@@ -742,8 +743,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const li = document.createElement('li');
             li.className = 'flex items-center bg-gray-100 rounded px-2 py-1 border border-gray-200 w-full';
             li.style.marginBottom = '0';
-            // Only show the table name (remapped) in the group, not schema
+            li.setAttribute('data-layer-idx', idx);
+            // Add a pan (drag) icon to the left
             li.innerHTML = `
+                <span class="drag-handle mr-2 cursor-move" title="Drag to reorder">
+                    <i data-lucide="move" class="w-4 h-4 text-gray-400"></i>
+                </span>
                 <span class="truncate font-medium">${remapTableName(layer.table)}</span>
                 <span class="ml-2 px-2 py-0.5 rounded text-xs font-semibold border ${typeColors[layer.type] || 'bg-gray-200 text-gray-700 border-gray-300'}">${remapType(layer.type)}</span>
                 <span class="flex gap-1 ml-auto">
@@ -757,7 +762,8 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             ul.appendChild(li);
         });
-        if (typeof lucide !== 'undefined') lucide.createIcons();        // Attach events after rendering
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        // Attach events after rendering
         ul.querySelectorAll('.toggle-layer-btn').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
@@ -856,6 +862,66 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             };
         });
+
+        // --- SortableJS Integration ---
+        // Ensure SortableJS is loaded
+        if (window.Sortable) {
+            // Destroy previous instance if exists
+            if (ul._sortableInstance) {
+                ul._sortableInstance.destroy();
+                ul._sortableInstance = null;
+            }
+            // Initialize SortableJS even if ul is empty
+            ul._sortableInstance = Sortable.create(ul, {
+                animation: 150,
+                handle: '.drag-handle', // Only allow dragging by the pan icon
+                ghostClass: 'bg-blue-50',
+                onEnd: function (evt) {
+                    // Reorder layerList to match new order
+                    const draggedIdx = evt.oldIndex;
+                    const newIdx = evt.newIndex;
+                    if (draggedIdx !== newIdx) {
+                        const moved = layerList.splice(draggedIdx, 1)[0];
+                        layerList.splice(newIdx, 0, moved);
+                    }
+                    const draggedLayer = layerList[newIdx];
+                    const aboveLayer = newIdx > 0 ? layerList[newIdx - 1] : null;
+                    const belowLayer = newIdx < layerList.length - 1 ? layerList[newIdx + 1] : null;
+                    function getLayerDefIds(layer) {
+                        if (!layer) return [];
+                        if (layer.type === 'Fill') {
+                            return [
+                                `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-fill`,
+                                `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-outline`
+                            ];
+                        } else if (layer.type === 'Line') {
+                            return [
+                                `${layer.schema}.${layer.table}-network-outline`,
+                                `${layer.schema}.${layer.table}-network-fill`
+                            ];
+                        } else if (layer.type === 'Symbol') {
+                            return [`${layer.schema}.${layer.table}-symbols`];
+                        } else if (layer.type === 'Circle') {
+                            return [`${layer.schema}.${layer.table}-circles`];
+                        } else if (layer.type === 'Heatmap') {
+                            return [`${layer.schema}.${layer.table}-heat`];
+                        }
+                        return [];
+                    }
+                    if (draggedLayer) {
+                        console.log('Dragged layer definition IDs:', getLayerDefIds(draggedLayer));
+                    }
+                    if (aboveLayer) {
+                        console.log('Above layer definition IDs:', getLayerDefIds(aboveLayer));
+                    }
+                    if (belowLayer) {
+                        console.log('Below layer definition IDs:', getLayerDefIds(belowLayer));
+                    }
+                }
+            });
+        } else {
+            console.warn('SortableJS is not loaded. Drag-and-drop will not work.');
+        }
     }
     // --- Style Dropdown Logic ---
     function renderStyleDropdown() {
@@ -872,10 +938,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'Symbol': colorDot = '🟢'; break;
                 case 'Heatmap': colorDot = '🟡'; break;
                 case 'Line': colorDot = '🟣'; break;
-                case 'Fill': colorDot = '🟣'; break;
+                case 'Fill': colorDot = '🔴'; break;
                 default: colorDot = '⚪';
             }
-            option.textContent = `${colorDot} ${remapTableName(layer.table)} [${remapType(layer.type)}]`;
+            option.textContent = `${colorDot} ${remapTableName(layer.table)}`;
             select.appendChild(option);
         });        // Render the filter row (but it won't affect the layer)
         renderLayerTypeRow(select.value, { onlyFilter: true });
@@ -1295,25 +1361,25 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (type === 'Line') {
             layers = [
                 {
-                    id: `${schema}.${table}-network-outline`,                type: 'line',
-                source: sourceName,
-                'source-layer': sourceLayer,
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-width': ['interpolate', ['exponential', 1.5], ['zoom'],
-                        14, 2,
-                        20, 30
-                    ],
-                    'line-color': '#f2a787',
-                    'line-opacity': ['interpolate', ['linear'], ['zoom'],
-                        14, 0.7,
-                        22, 1
-                    ]
-                },
-                ...(Array.isArray(filter) ? { filter } : {})
+                    id: `${schema}.${table}-network-outline`,
+                    type: 'line',
+                    source: sourceName,
+                    'source-layer': sourceLayer,
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-width': ['interpolate', ['exponential', 1.5], ['zoom'],
+                            14, 2,
+                            20, 30
+                        ],
+                        'line-color': '#f2a787',
+                        'line-opacity': ['interpolate', ['linear'], ['zoom'],
+                            14, 0.7,
+                            22, 1
+                        ]
+                    }
                 },
                 {
                     id: `${schema}.${table}-network-fill`,
@@ -1454,19 +1520,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }];
         }        // Add source and layers to map
         try {
-            // Remove existing layers and source if they exist
+            // Only remove layers that use the source, not the source itself if it is still needed
             if (map.getSource(sourceName)) {
                 layers.forEach(layer => {
                     if (map.getLayer(layer.id)) {
                         map.removeLayer(layer.id);
                     }
                 });
-                map.removeSource(sourceName);
+                // Do NOT remove the source if it already exists; just reuse it
+            } else {
+                // Add new source only if it does not exist
+                map.addSource(sourceName, sourceDef);
+                console.log(`Added source: ${sourceName}`, sourceDef);
             }
 
-            // Add new source
-            map.addSource(sourceName, sourceDef);
-            console.log(`Added source: ${sourceName}`, sourceDef);            // Add each layer with debug logging
+            // Add each layer with debug logging
             layers.forEach(layer => {
                 try {
                     map.addLayer(layer);
@@ -1503,11 +1571,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
-            // Update tracking list only if layer was successfully added
-            const existingLayerIndex = layerList.findIndex(l => l.name === `${schema}.${table}`);
+            // Update tracking list only if this exact layer (schema, table, type) was successfully added
+            const existingLayerIndex = layerList.findIndex(l => l.schema === schema && l.table === table && l.type === type);
             if (existingLayerIndex >= 0) {
                 layerList[existingLayerIndex] = {
-                    name: `${schema}.${table}`,
+                    name: `${schema}.${table}.${type}`,
                     schema,
                     table,
                     type,
@@ -1516,7 +1584,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
             } else {
                 layerList.push({
-                    name: `${schema}.${table}`,
+                    name: `${schema}.${table}.${type}`,
                     schema,
                     table,
                     type,
@@ -1618,11 +1686,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 `${layer.schema}.${layer.table}-network-fill`
             );
         } else if (layer.type === 'Symbol') {
-            layerIds.push(`${layer.schema}.${table}-symbols`);
+            layerIds.push(`${layer.schema}.${layer.table}-symbols`);
         } else if (layer.type === 'Circle') {
-            layerIds.push(`${layer.schema}.${table}-circles`);
+            layerIds.push(`${layer.schema}.${layer.table}-circles`);
         } else if (layer.type === 'Heatmap') {
-            layerIds.push(`${layer.schema}.${table}-heat`);
+            layerIds.push(`${layer.schema}.${layer.table}-heat`);
         }        // Update filter for each layer
         layerIds.forEach(id => {
             if (map.getLayer(id)) {
@@ -1661,6 +1729,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Geocoding search elements
+   
     const geocodingSearch = document.getElementById('geocoding-search');
     const geocodingResults = document.getElementById('geocoding-results');
     let debounceTimeout;
@@ -1742,6 +1811,7 @@ document.addEventListener('DOMContentLoaded', () => {
             geocodingResults.innerHTML = `
                 <div class="px-4 py-2 text-sm text-red-500">
                     Error searching location
+               
                 </div>`;
             geocodingResults.classList.remove('hidden');
         }
