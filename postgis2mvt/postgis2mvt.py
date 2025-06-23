@@ -184,18 +184,18 @@ def main():
         print("="*50)
 
         for zoom in sorted(args.zoom):
-            print(f"\n--- Generating tiles for zoom level: {zoom} ---")
+            # print(f"\n--- Generating tiles for zoom level: {zoom} ---")
             zoom_dir = os.path.join(layer_tiles_dir, str(zoom))
             os.makedirs(zoom_dir, exist_ok=True)
-            print(f"  Zoom level directory ensured: {zoom_dir}")
+            # print(f"Zoom level directory ensured: {zoom_dir}")
 
             # Use mercantile.tiles to get all tiles within the bbox for the current zoom
             tiles_to_process = list(mercantile.tiles(min_lon_merc, min_lat_merc, max_lon_merc, max_lat_merc, zoom))
-            print(f"  Found {len(tiles_to_process)} tiles to process for zoom {zoom}.")
+            # print(f"  Found {len(tiles_to_process)} tiles to process for zoom {zoom}.")
 
             tile_count = 0
             # Wrap the tile iteration with tqdm for a progress bar
-            for tile in tqdm(tiles_to_process, desc=f"Processing Z{zoom} tiles", unit="tile"):
+            for tile in tqdm(tiles_to_process, desc=f"Generating Z{zoom} tiles", unit="tile"):
                 x, y, z = tile.x, tile.y, tile.z # mercantile.Tile objects have x, y, z attributes
 
                 x_dir = os.path.join(zoom_dir, str(x))
@@ -236,7 +236,7 @@ def main():
                 # else:
                     # No data for this tile. The progress bar still advances.
 
-            print(f"--- Completed zoom {zoom}: Generated {tile_count} tiles. ---")
+            # print(f"--- Completed zoom {zoom}: Generated {tile_count} tiles. ---")
 
     except psycopg2.Error as e:
         print(f"\n[ERROR] Database error: {e}")
