@@ -1,7 +1,7 @@
 // static/js/map_dashboard.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Map Dashboard loaded successfully.');
+    // console.log('Map Dashboard loaded successfully.');
 
     // Mapbox Access Token will be fetched from backend
     let mapboxAccessToken = '';
@@ -304,7 +304,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const userData = await response.json();
-                console.log('Successfully fetched user data:', userData);
+                // Log user data for debugging
+                console.log(userData);
                 userDisplayName.textContent = userData.username || userData.email || 'User';
                 userEmailDisplay.textContent = userData.email || 'No Email';
 
@@ -351,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML("<h3>Your Last Saved Location</h3><p>This is where your map was centered.</p>"))
             .addTo(map);
 
-        console.log('Map initialized with Mapbox GL JS and user data.');
+        // console.log('Map initialized with Mapbox GL JS and user data.');
 
         const zoomInButton = document.getElementById('zoom-in');
         const zoomOutButton = document.getElementById('zoom-out');
@@ -630,7 +631,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (geomData.geometryType) {
                                 const g = geomData.geometryType.toLowerCase();
                                 if (g.includes('point')) geometryType = 'Point';
-                                else if (g.includes('line')) geometryType = 'LineString';
+                                else if ( g.includes('line')) geometryType = 'LineString';
                                 else if (g.includes('polygon')) geometryType = 'Polygon';
                             }
                         }
@@ -799,11 +800,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 renderLayerList();
                 renderStyleDropdown();
-                console.log(`Layer toggled:`, {
+                layerStatus = {
                     name: remapTableName(layer.table),
                     type: remapType(layer.type),
                     visible: layer.visible
-                });
+                };
+                console.log(layerStatus);
             };
         });
         ul.querySelectorAll('.remove-layer-btn').forEach(btn => {
@@ -834,19 +836,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 // Remove layers and source from map
+                let layerStatus = false;
                 try {
                     // Remove layers first
                     layerIds.forEach(id => {
                         if (map.getLayer(id)) {
                             map.removeLayer(id);
-                            console.log(`Removed layer: ${id}`);
+                            layerStatus = true;
                         }
                     });
 
                     // Then remove source
                     if (map.getSource(sourceName)) {
                         map.removeSource(sourceName);
-                        console.log(`Removed source: ${sourceName}`);
+                        layerStatus = false
                     }
                 } catch (error) {
                     console.error('Error removing layers/source:', error);
@@ -856,9 +859,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 layerList.splice(idx, 1);
                 renderLayerList();
                 renderStyleDropdown();
-                console.log(`Layer removed:`, {
+                console.log({
                     name: remapTableName(removed.table),
-                    type: remapType(removed.type)
+                    type: remapType(removed.type),
+                    layerStatus: layerStatus                  
                 });
             };
         });
@@ -1333,7 +1337,8 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Check for user_id
         const hasUserId = fields.some(f => f.name === 'user_id');
-        console.log('Table has user_id:', hasUserId);
+        // Log the presence of user_id
+        console.log({ hasUserId });
 
         // If table has user_id, get the current user's ID and create a filter
         if (hasUserId) {
@@ -1345,7 +1350,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (userResp.ok) {
                     const userData = await userResp.json();
                     filter.push(['==', ['get', 'user_id'], userData.id]);
-                    console.log('Created user_id filter:', filter);
+                    // console.log('Created user_id filter:', filter);
                 } else {
                     console.error('Failed to fetch user data for filter, status:', userResp.status);
                     return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
@@ -1357,19 +1362,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Log the final filter
-        console.log('Final filter:', filter);
+        // console.log('Final filter:', filter);
         
         // If filter only contains ["all"] with no conditions, it will allow everything
         return filter;
     }
 
     async function addLayerToMap(schema, table, type, geometryType) {
-        console.log('Adding layer with parameters:', { schema, table, type, geometryType });
-          // Get fields and create filter (only for user_id)
+        // console.log('Adding layer with parameters:', { schema, table, type, geometryType });
+        // Get fields and create filter (only for user_id)
         const fields = await getFieldList(schema, table);
         const filter = await createLayerFilter(fields);
         
-        console.log('Layer filter:', filter);
+        // console.log('Layer filter:', filter);
 
         const sourceName = `${table.toLowerCase()}_tiles`;
         const sourceLayer = `${table.toLowerCase()}`;
@@ -1381,7 +1386,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let layers = [];
         if (type === 'Fill') {
-            console.log(`Adding Fill layer for ${schema}.${table}`);
+            // console.log(`Adding Fill layer for ${schema}.${table}`);
             layers = [
                 {
                     id: `${schema.toLowerCase()}.${table.toLowerCase()}-fill`,
@@ -1569,7 +1574,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     ]
                 }
             }];
-        }        // Add source and layers to map
+        }        let layerStatus = false;
+        // Add source and layers to map
         try {
             // Only remove layers that use the source, not the source itself if it is still needed
             if (map.getSource(sourceName)) {
@@ -1582,44 +1588,41 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Add new source only if it does not exist
                 map.addSource(sourceName, sourceDef);
-                console.log(`Added source: ${sourceName}`, sourceDef);
+                // No source_status tracking needed
+                console.log({sourceName});
+                console.log(sourceDef);
             }
 
             // Add each layer with debug logging
             layers.forEach(layer => {
                 try {
                     map.addLayer(layer);
-                    console.log(`Successfully added layer: ${layer.id}`, {
-                        id: layer.id,
-                        source: layer.source,
-                        'source-layer': layer['source-layer'],
-                        filter: layer.filter
-                    });
-
+                    layerStatus = true;
+                    console.log(layer, { layerStatus });
                     // Verify the layer was added
-                    const addedLayer = map.getLayer(layer.id);
-                    if (addedLayer) {
-                        console.log(`Layer ${layer.id} verified on map:`, addedLayer);
-                    } else {
-                        console.warn(`Layer ${layer.id} not found after adding`);
-                    }
+                    // const addedLayer = map.getLayer(layer.id);
+                    // if (addedLayer) {
+                    //     console.log(`Layer ${layer.id} verified on map:`, addedLayer);
+                    // } else {
+                    //     console.warn(`Layer ${layer.id} not found after adding`);
+                    // }
 
                     // Check if source is loaded
-                    const source = map.getSource(sourceName);
-                    if (source) {
-                        console.log(`Source ${sourceName} is loaded:`, source);
-                    } else {
-                        console.warn(`Source ${sourceName} not found`);
-                    }
+                    // const source = map.getSource(sourceName);
+                    // if (source) {
+                    //     console.log(`Source ${sourceName} is loaded:`, source);
+                    // } else {
+                    //     console.warn(`Source ${sourceName} not found`);
+                    // }
                 } catch (error) {
-                    console.error(`Error adding layer ${layer.id}:`, error);
+                    // console.error(`Error adding layer ${layer.id}:`, error);
                 }
             });
 
             map.on('error', (e) => {
-                if (e.error && e.error.message.includes(sourceName)) {
-                    console.error(`Tile loading error for ${sourceName}:`, e.error);
-                }
+                // if (e.error && e.error.message.includes(sourceName)) {
+                //     console.error(`Tile loading error for ${sourceName}:`, e.error);
+                // }
             });
 
             // Update tracking list only if this exact layer (schema, table, type) was successfully added
@@ -1691,9 +1694,8 @@ document.addEventListener('DOMContentLoaded', () => {
             source: { [sourceName]: sourceDef },
             layers
         };
-        console.log('Adding layer:', logObj);
-        console.log('Layer definitions:', JSON.stringify(layers, null, 2));
-
+        // console.log('Adding layer:', logObj);
+        // console.log('Layer definitions:', JSON.stringify(layers, null, 2));
         return { sourceDef, layers };
     }
 
@@ -1717,7 +1719,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (geomData.geometryType) {
                             const g = geomData.geometryType.toLowerCase();
                             if (g.includes('point')) geometryType = 'Point';
-                            else if (g.includes('line')) geometryType = 'LineString';
+                            else if ( g.includes('line')) geometryType = 'LineString';
                             else if (g.includes('polygon')) geometryType = 'Polygon';
                         }
                     }
@@ -1774,7 +1776,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }        // Update filter for each layer
         layerIds.forEach(id => {
             if (map.getLayer(id)) {
-                console.log('Updating filter for layer ID:', id);
+                // console.log('Updating filter for layer ID:', id);
                 map.setFilter(id, newFilter);
                 
                 // Get and log the updated layer definition
@@ -1898,4 +1900,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initGeocoding();
+
+    // Print JWT token on page load (for debugging)
+    const authToken = localStorage.getItem('authToken');
+    if (authToken) {
+        console.log('%c[JWT Token]%c ' + authToken, 'color: #fff; background: #2196F3; font-weight: bold; padding: 2px 6px; border-radius: 3px;', 'color: #fff;');
+    }
 });
