@@ -2,16 +2,24 @@ import argparse
 import os
 import json
 from mapbox_vector_tile import decode
+import requests
+from io import BytesIO
 
 
 def read_properties_only(file_path):
     """
     Reads the MVT file and extracts only properties (no geometry).
     Returns a list of feature dictionaries.
+    Supports both local file paths and URLs.
     """
-    with open(file_path, "rb") as f:
-        data = f.read()
-        tile = decode(data)
+    if file_path.startswith('http://') or file_path.startswith('https://'):
+        response = requests.get(file_path)
+        response.raise_for_status()
+        data = response.content
+    else:
+        with open(file_path, "rb") as f:
+            data = f.read()
+    tile = decode(data)
 
     all_properties = []
 

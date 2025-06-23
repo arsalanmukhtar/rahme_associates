@@ -191,7 +191,7 @@ def main():
 
             # Use mercantile.tiles to get all tiles within the bbox for the current zoom
             tiles_to_process = list(mercantile.tiles(min_lon_merc, min_lat_merc, max_lon_merc, max_lat_merc, zoom))
-            # print(f"  Found {len(tiles_to_process)} tiles to process for zoom {zoom}.")
+            print(f"Zoom: {zoom} - Tiles: {len(tiles_to_process)}")
 
             tile_count = 0
             # Wrap the tile iteration with tqdm for a progress bar
