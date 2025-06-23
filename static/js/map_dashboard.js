@@ -908,14 +908,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         return [];
                     }
+                    const draggedIds = getLayerDefIds(draggedLayer);
+                    const aboveIds = getLayerDefIds(aboveLayer);
+                    const belowIds = getLayerDefIds(belowLayer);
                     if (draggedLayer) {
-                        console.log('Dragged layer definition IDs:', getLayerDefIds(draggedLayer));
+                        console.log('Dragged layer definition IDs:', draggedIds);
                     }
                     if (aboveLayer) {
-                        console.log('Above layer definition IDs:', getLayerDefIds(aboveLayer));
+                        console.log('Above layer definition IDs:', aboveIds);
                     }
                     if (belowLayer) {
-                        console.log('Below layer definition IDs:', getLayerDefIds(belowLayer));
+                        console.log('Below layer definition IDs:', belowIds);
+                    }
+                    // --- Mapbox moveLayer logic ---
+                    // Move all draggedIds below the first aboveId (or to bottom if no aboveLayer)
+                    if (draggedIds.length > 0) {
+                        let beforeId = aboveIds && aboveIds.length > 0 ? aboveIds[0] : null;
+                        // Move in order so the last in draggedIds ends up at the bottom
+                        for (let i = 0; i < draggedIds.length; i++) {
+                            const id = draggedIds[i];
+                            if (map.getLayer(id)) {
+                                map.moveLayer(id, beforeId);
+                                console.log(`Moved Layer ${id} below ${beforeId || 'bottom'}.`);
+                            }
+                        }
                     }
                 }
             });
@@ -1598,6 +1614,33 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStyleDropdown();
         } catch (error) {
             console.error('Error adding layer to map:', error);
+        }
+
+        // --- After adding, enforce correct stacking order ---
+        // Collect all layer IDs in the order of layerList (bottom to top in UI = top to bottom in map)
+        let allLayerIds = [];
+        layerList.forEach(layer => {
+            if (layer.type === 'Fill') {
+                allLayerIds.push(`${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-fill`);
+                allLayerIds.push(`${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-outline`);
+            } else if (layer.type === 'Line') {
+                allLayerIds.push(`${layer.schema}.${layer.table}-network-outline`);
+                allLayerIds.push(`${layer.schema}.${layer.table}-network-fill`);
+            } else if (layer.type === 'Symbol') {
+                allLayerIds.push(`${layer.schema}.${layer.table}-symbols`);
+            } else if (layer.type === 'Circle') {
+                allLayerIds.push(`${layer.schema}.${layer.table}-circles`);
+            } else if (layer.type === 'Heatmap') {
+                allLayerIds.push(`${layer.schema}.${layer.table}-heat`);
+            }
+        });
+        // Move each layer to the bottom in order (so first in list is on top visually)
+        for (let i = allLayerIds.length - 1; i >= 0; i--) {
+            const id = allLayerIds[i];
+            if (map.getLayer(id)) {
+                map.moveLayer(id);
+                // No beforeId means move to top of stack (bottom visually)
+            }
         }
 
         // Log the definitions
