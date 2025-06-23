@@ -1196,10 +1196,25 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Restore each layer
                         mapState.layers.forEach(async layer => {
                             await addLayerToMap(layer.schema, layer.table, layer.type, layer.geometryType);
-                            
-                            // Restore visibility state if it was hidden
                             if (!layer.visible) {
-                                const layerIds = getLayerIds(layer);
+                                const layerIds = [];
+                                if (layer.type === 'Fill') {
+                                    layerIds.push(
+                                        `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-fill`,
+                                        `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-outline`
+                                    );
+                                } else if (layer.type === 'Line') {
+                                    layerIds.push(
+                                        `${layer.schema}.${layer.table}-network-outline`,
+                                        `${layer.schema}.${layer.table}-network-fill`
+                                    );
+                                } else if (layer.type === 'Symbol') {
+                                    layerIds.push(`${layer.schema}.${layer.table}-symbols`);
+                                } else if (layer.type === 'Circle') {
+                                    layerIds.push(`${layer.schema}.${layer.table}-circles`);
+                                } else if (layer.type === 'Heatmap') {
+                                    layerIds.push(`${layer.schema}.${layer.table}-heat`);
+                                }
                                 layerIds.forEach(id => {
                                     if (window.map.getLayer(id)) {
                                         window.map.setLayoutProperty(id, 'visibility', 'none');
@@ -1207,12 +1222,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 });
                             }
                         });
-
                         // Restore map position
                         window.map.setCenter(mapState.center);
                         window.map.setZoom(mapState.zoom);
                         window.map.setBearing(mapState.bearing);
                         window.map.setPitch(mapState.pitch);
+                        // --- Fix: re-render layer list to update eye icons ---
+    renderLayerList();
                     });
                 } else if (typeof map !== 'undefined' && typeof map.setStyle === 'function') {
                     // Same logic for map object
@@ -1229,9 +1245,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     map.once('style.load', () => {
                         mapState.layers.forEach(async layer => {
                             await addLayerToMap(layer.schema, layer.table, layer.type, layer.geometryType);
-                            
                             if (!layer.visible) {
-                                const layerIds = getLayerIds(layer);
+                                const layerIds = [];
+                                if (layer.type === 'Fill') {
+                                    layerIds.push(
+                                        `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-fill`,
+                                        `${layer.schema.toLowerCase()}.${layer.table.toLowerCase()}-outline`
+                                    );
+                                } else if (layer.type === 'Line') {
+                                    layerIds.push(
+                                        `${layer.schema}.${layer.table}-network-outline`,
+                                        `${layer.schema}.${layer.table}-network-fill`
+                                    );
+                                } else if (layer.type === 'Symbol') {
+                                    layerIds.push(`${layer.schema}.${layer.table}-symbols`);
+                                } else if (layer.type === 'Circle') {
+                                    layerIds.push(`${layer.schema}.${layer.table}-circles`);
+                                } else if (layer.type === 'Heatmap') {
+                                    layerIds.push(`${layer.schema}.${layer.table}-heat`);
+                                }
                                 layerIds.forEach(id => {
                                     if (map.getLayer(id)) {
                                         map.setLayoutProperty(id, 'visibility', 'none');
@@ -1240,10 +1272,13 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         });
 
+                        // Restore map position
                         map.setCenter(mapState.center);
                         map.setZoom(mapState.zoom);
                         map.setBearing(mapState.bearing);
                         map.setPitch(mapState.pitch);
+                        // --- Fix: re-render layer list to update eye icons ---
+    renderLayerList();
                     });
                 }
                 closeBasemapOptions();
@@ -1590,13 +1625,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Update tracking list only if this exact layer (schema, table, type) was successfully added
             const existingLayerIndex = layerList.findIndex(l => l.schema === schema && l.table === table && l.type === type);
             if (existingLayerIndex >= 0) {
+                // Only update geometryType, keep visible as is
                 layerList[existingLayerIndex] = {
+                    ...layerList[existingLayerIndex],
                     name: `${schema}.${table}.${type}`,
                     schema,
                     table,
                     type,
-                    geometryType,
-                    visible: true
+                    geometryType
+                    // visible: keep as is
                 };
             } else {
                 layerList.push({
