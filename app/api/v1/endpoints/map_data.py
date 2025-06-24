@@ -15,7 +15,7 @@ from app.schemas.user import UserInDB
 # from app.core.config import settings
 
 import httpx
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 
 router = APIRouter()
 
@@ -182,3 +182,12 @@ async def proxy_tile(layer: str, z: int, x: int, y: int):
         headers.pop("content-encoding", None)
         headers.pop("transfer-encoding", None)
         return Response(content=proxied_response.content, status_code=proxied_response.status_code, headers=headers, media_type="application/x-protobuf")
+
+
+@router.get("/static/sprite.json", include_in_schema=False)
+def get_sprite_json():
+    return FileResponse("static/config/sprite.json", media_type="application/json")
+
+@router.get("/static/sprite.png", include_in_schema=False)
+def get_sprite_png():
+    return FileResponse("static/config/sprite.png", media_type="image/png")

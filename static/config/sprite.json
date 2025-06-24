@@ -1,0 +1,138 @@
+{
+	"accepted": {
+		"width": 102,
+		"height": 102,
+		"x": 0,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"agreement_prep": {
+		"width": 102,
+		"height": 102,
+		"x": 102,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"agreement_signed": {
+		"width": 102,
+		"height": 102,
+		"x": 204,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"built": {
+		"width": 102,
+		"height": 102,
+		"x": 306,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"construction": {
+		"width": 102,
+		"height": 102,
+		"x": 408,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"countered": {
+		"width": 102,
+		"height": 102,
+		"x": 510,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"for_sale": {
+		"width": 102,
+		"height": 102,
+		"x": 612,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"not_home": {
+		"width": 102,
+		"height": 102,
+		"x": 714,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"not_interested": {
+		"width": 102,
+		"height": 102,
+		"x": 816,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"not_interested2": {
+		"width": 102,
+		"height": 102,
+		"x": 918,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"offer_given": {
+		"width": 102,
+		"height": 102,
+		"x": 1020,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"rejected_offer": {
+		"width": 102,
+		"height": 102,
+		"x": 1122,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"settled": {
+		"width": 102,
+		"height": 102,
+		"x": 1224,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"sold": {
+		"width": 102,
+		"height": 102,
+		"x": 1326,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"tenanted": {
+		"width": 102,
+		"height": 102,
+		"x": 1428,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"unknown": {
+		"width": 102,
+		"height": 102,
+		"x": 1530,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	},
+	"wants_offer": {
+		"width": 102,
+		"height": 102,
+		"x": 1632,
+		"y": 0,
+		"pixelRatio": 1,
+		"visible": true
+	}
+}

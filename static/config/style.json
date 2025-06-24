@@ -1,0 +1,199 @@
+{
+    "version": 8,
+    "sprite": "http://localhost:8000/api/v1/map-data/static/sprite",
+    "name": "NSW Map",
+    "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
+    "sources": {
+        "openstreetmap": {
+            "type": "raster",
+            "tiles": [
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            ],
+            "tileSize": 256,
+            "maxzoom": 22
+        },
+        "nsw_addresses_tiles": {
+            "type": "vector",
+            "tiles": [
+                "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_addresses/{z}/{x}/{y}.pbf"
+            ],
+            "maxzoom": 22
+        },
+        "nsw_roads_tiles": {
+            "type": "vector",
+            "tiles": [
+                "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_roads/{z}/{x}/{y}.pbf"
+            ],
+            "maxzoom": 22
+        },
+        "nsw_lots_tiles": {
+            "type": "vector",
+            "tiles": [
+                "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_lots/{z}/{x}/{y}.pbf"
+            ],
+            "maxzoom": 22
+        }
+    },
+    "layers": [
+        {
+            "id": "basemap",
+            "type": "raster",
+            "source": "openstreetmap"
+        },
+        {
+            "id": "addresses-point-circle",
+            "type": "circle",
+            "source": "nsw_addresses_tiles",
+            "source-layer": "nsw_addresses",
+            "paint": {
+                "circle-radius": 4,
+                "circle-color": "#0074D9",
+                "circle-opacity": 0.8,
+                "circle-stroke-width": 2,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-opacity": 0.9
+            }
+        },
+        {
+            "id": "lots-general-fill",
+            "type": "fill",
+            "source": "nsw_lots_tiles",
+            "source-layer": "nsw_lots",
+            "paint": {
+                "fill-opacity": 0.2,
+                "fill-color": "#ffffff"
+            },
+            "filter": [
+                "!=",
+                ["get", "number_fir"],
+                null
+            ]
+        },
+        {
+            "id": "lots-general-outline",
+            "type": "line",
+            "source": "nsw_lots_tiles",
+            "source-layer": "nsw_lots",
+            "paint": {
+                "line-color": "#d2dae2",
+                "line-width": 0.3,
+                "line-opacity": 0.7
+            },
+            "filter": [
+                "!=",
+                ["get", "number_fir"],
+                null
+            ]
+        },
+        {
+            "id": "roads-network-outline",
+            "type": "line",
+            "source": "nsw_roads_tiles",
+            "source-layer": "nsw_roads",
+            "layout": {
+                "line-join": "round",
+                "line-cap": "round"
+            },
+            "paint": {
+                "line-width": ["interpolate", ["exponential", 1.5], ["zoom"],
+                    14, 2,
+                    20, 30
+                ],
+                "line-color": "#f2a787",
+                "line-opacity": ["interpolate", ["linear"], ["zoom"],
+                    14, 0.7,
+                    22, 1
+                ]
+            }
+        },
+        {
+            "id": "roads-network-fill",
+            "type": "line",
+            "source": "nsw_roads_tiles",
+            "source-layer": "nsw_roads",
+            "layout": {
+                "line-join": "round",
+                "line-cap": "round"
+            },
+            "paint": {
+                "line-width": ["interpolate", ["exponential", 1.5], ["zoom"],
+                    14, 1.5,
+                    20, 20
+                ],
+                "line-color": "#f0d9ce",
+                "line-opacity": ["interpolate", ["linear"], ["zoom"],
+                    14, 0.5,
+                    22, 1
+                ]
+            }
+        },
+        {
+            "id": "roads-label",
+            "type": "symbol",
+            "source": "nsw_roads_tiles",
+            "source-layer": "nsw_roads",
+            "layout": {
+                "text-field": ["get", "name"],
+                "text-font": ["Open Sans Bold"],
+                "text-size": [
+                "interpolate", ["linear"],
+                ["zoom"], 16, 8, 19, 15, 22, 19
+                ],
+                "text-anchor": "center",
+                "symbol-placement": "line"
+            },
+            "paint": {
+                "text-color": "#2c2c2c",
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 0.5
+            }
+        },
+        {
+            "id": "lots-user-restricted-fill",
+            "type": "fill",
+            "source": "nsw_lots_tiles",
+            "source-layer": "nsw_lots",
+            "filter": [
+                "==", ["get", "user_id"], ""
+            ],
+            "paint": {
+                "fill-opacity": 0.2,
+                "fill-color": [
+                    "match",["get", "icon"],
+                    "Accepted", "#a0e4a5",
+                    "Agreement Prep", "#000000",
+                    "Agreement Signed", "#ffdecf",
+                    "Built", "#77553d",
+                    "Construction", "#FFCD34",
+                    "Countered", "#fc9942",
+                    "For Sale", "#BC674A",
+                    "Not Home", "#000000",
+                    "Not Interested", "#f74354",
+                    "Not Interested2", "#f74354",
+                    "Offer Given", "#ffda45",
+                    "Rejected Offer", "#f74354",
+                    "Settled", "#c1e9af",
+                    "Sold", "#0fa50f",
+                    "Tenanted", "#453BE6",
+                    "Uknown", "#60B7FF",
+                    "Wants Offer", "#ffcdbe",
+                    "#ffffff"
+                ]
+            }
+        },
+        {
+            "id": "lots-user-restricted-outline",
+            "type": "line",
+            "source": "nsw_lots_tiles",
+            "source-layer": "nsw_lots",
+            "filter": [
+                "==", ["get", "user_id"], ""
+            ],
+            "paint": {
+                "line-color": "#bdc3c7",
+                "line-width": 0.3,
+                "line-opacity": 0.5
+            }
+        }
+    ]
+}

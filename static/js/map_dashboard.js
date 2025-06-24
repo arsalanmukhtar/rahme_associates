@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Network error fetching initial user data for map:', error);
         }        map = new mapboxgl.Map({
             container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11',
+            style: '/static/config/style.json', // Load custom style.json for sources and tiles
             center: initialCenter,
             zoom: initialZoom,
             minZoom: 0,
@@ -554,76 +554,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (window.agGrid) initOffersGrid();
-
-    // --- Basemap Switcher Logic ---
-    // Remove all dynamic layer logic; only switch style
-    const basemapSwitcherBtn = document.getElementById('basemap-switcher-btn');
-    const basemapOptionsDiv = document.getElementById('basemap-options');    // Basemap definitions
-    const basemaps = [
-        { 
-            key: 'none', 
-            label: 'Plain', 
-            style: {
-                version: 8,
-                sources: {},
-                layers: [{
-                    id: 'background',
-                    type: 'background',
-                    paint: { 'background-color': '#ffffff' }
-                }]
-            },
-            img: '/static/images/basemaps/plain.png'  // You'll need to add this image
-        },
-        { key: 'streets', label: 'Streets', style: 'mapbox://styles/mapbox/streets-v12', img: '/static/images/basemaps/streets.png' },
-        { key: 'outdoors', label: 'Outdoors', style: 'mapbox://styles/mapbox/outdoors-v12', img: '/static/images/basemaps/outdoors.png' },
-        { key: 'light', label: 'Light', style: 'mapbox://styles/mapbox/light-v11', img: '/static/images/basemaps/light.png' },
-        { key: 'dark', label: 'Dark', style: 'mapbox://styles/mapbox/dark-v11', img: '/static/images/basemaps/dark.png' },
-        { key: 'satellite', label: 'Satellite', style: 'mapbox://styles/mapbox/satellite-v9', img: '/static/images/basemaps/satellite.png' },
-        { key: 'hybrid', label: 'Hybrid', style: 'mapbox://styles/mapbox/satellite-streets-v12', img: '/static/images/basemaps/hybrid.png' },
-    ];
-    // Render basemap options
-    function renderBasemapOptions() {
-        basemapOptionsDiv.innerHTML = '';
-        basemaps.forEach(bm => {
-            const fig = document.createElement('figure');
-            fig.className = 'flex flex-col items-center cursor-pointer group';
-            fig.innerHTML = `                <img src="${bm.img}" alt="${bm.label}" class="w-16 h-16 object-cover rounded-lg border border-gray-300">
-                <figcaption class="mt-1 text-xs text-gray-700">${bm.label}</figcaption>
-            `;            fig.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                if (window.map && typeof window.map.setStyle === 'function') {
-                    window.map.setStyle(bm.style);
-                } else if (typeof map !== 'undefined' && typeof map.setStyle === 'function') {
-                    map.setStyle(bm.style);
-                }
-                // Do NOT closeBasemapOptions() here; keep the options open after switching
-            });
-            basemapOptionsDiv.appendChild(fig);
-        });
-    }
-    function openBasemapOptions() {
-        basemapOptionsDiv.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
-        basemapOptionsDiv.classList.add('scale-100', 'opacity-100');
-    }
-    function closeBasemapOptions() {
-        basemapOptionsDiv.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
-        basemapOptionsDiv.classList.remove('scale-100', 'opacity-100');
-    }
-    basemapSwitcherBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        renderBasemapOptions();
-        if (basemapOptionsDiv.classList.contains('scale-0')) {
-            openBasemapOptions();
-        } else {
-            closeBasemapOptions();
-        }
-    });
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-        if (!basemapOptionsDiv.contains(e.target) && !basemapSwitcherBtn.contains(e.target)) {
-            closeBasemapOptions();
-        }
-    });
 
     // If you set font-family in JS, use Barlow:
     document.body.style.fontFamily = "'Barlow', sans-serif";

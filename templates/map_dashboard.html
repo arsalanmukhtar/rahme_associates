@@ -49,22 +49,6 @@
         </div>
     </nav>
 
-    <!-- Basemap Switcher Button (top left, below navbar, slightly lower, brighter border on click/hover) -->
-    <div id="basemap-switcher-container" class="absolute left-4 top-[90px] z-30 flex flex-col items-start">
-        <button id="basemap-switcher-btn" class="bg-white bg-opacity-70 p-1.5 rounded-full shadow-lg border border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-300 transition-all duration-300 ease-in-out flex items-center justify-center" style="width:32px;height:32px;">
-            <!-- Map icon from Lucide, color matches sidebar toggles -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-600 group-hover:text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21 3 6" stroke="currentColor" stroke-width="2" fill="none"/>
-                <polyline points="9 3 9 18" stroke="currentColor" stroke-width="2" fill="none"/>
-                <polyline points="15 6 15 21" stroke="currentColor" stroke-width="2" fill="none"/>
-            </svg>
-        </button>
-        <!-- Basemap Options (hidden by default, animated, 3x2 grid) -->
-        <div id="basemap-options" class="mt-2 bg-white shadow-xl border border-gray-200 rounded-xl p-3 grid grid-cols-3 grid-rows-2 gap-3 transition-all duration-300 ease-in-out scale-0 opacity-0 pointer-events-none" style="transform-origin: top left;">
-            <!-- Basemap figures will be injected by JS -->
-        </div>
-    </div>
-
     <!-- Map Container -->
     <div id="map" class="flex-grow w-full relative z-10">
         <!-- Custom Map Controls -->
@@ -77,11 +61,6 @@
             </button>
             <button id="reset-compass" class="map-control-button" aria-label="Reset Compass">
                 <i data-lucide="compass"></i>
-            </button>
-        </div>        <!-- Sidebar Toggle Buttons (grouped) -->
-        <div id="sidebar-toggle-group" class="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
-            <button id="sidebar-toggle" class="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300 ease-in-out transform group translate-x-0">
-                <i data-lucide="layers" class="w-5 h-5 text-gray-600 group-hover:text-gray-800"></i>
             </button>
         </div>
         <!-- Sidebar (shared for both modes) -->
