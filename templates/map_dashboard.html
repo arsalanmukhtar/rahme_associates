@@ -24,22 +24,13 @@
 </head>
 <body class="flex flex-col min-h-screen font-['Barlow'] bg-gray-50">
 
-    <!-- Navbar -->    <nav class="bg-white p-1 shadow-xl z-20 relative border-b border-gray-300">
+    <!-- Navbar -->
+    <nav class="bg-white p-1 shadow-xl z-20 relative border-b border-gray-300">
         <div class="container mx-auto flex justify-between items-center">
             <a href="/" class="text-gray-800 text-3xl font-bold tracking-wider rounded-md">
                 <img src="/static/images/logo.svg" alt="GeoEstate Logo" class="w-16 h-16 inline-block">
             </a>
             <div class="flex items-center space-x-4">
-                <!-- Geocoding Search Box -->
-                <div class="relative">                    <input type="text" id="geocoding-search" 
-                        class="w-64 px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-100 focus:border-gray-400"
-                        placeholder="Search Location..."
-                        autocomplete="off">
-                    <!-- Search Results Container -->
-                    <div id="geocoding-results" class="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-40">
-                        <!-- Results will be populated by JavaScript -->
-                    </div>
-                </div>
                 <!-- User Controls -->
                 <div class="relative">
                 <!-- User Panel Dropdown Toggle -->
@@ -91,9 +82,6 @@
         <div id="sidebar-toggle-group" class="fixed right-4 top-1/2 -translate-y-1/2 z-20 flex flex-col gap-2">
             <button id="sidebar-toggle" class="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300 ease-in-out transform group translate-x-0">
                 <i data-lucide="layers" class="w-5 h-5 text-gray-600 group-hover:text-gray-800"></i>
-            </button>
-            <button id="style-sidebar-toggle" class="bg-white p-2 rounded-full shadow-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300 ease-in-out transform group translate-x-0">
-                <i data-lucide="palette" class="w-5 h-5 text-gray-600 group-hover:text-gray-800"></i>
             </button>
         </div>
         <!-- Sidebar (shared for both modes) -->
