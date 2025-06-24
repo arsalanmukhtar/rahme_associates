@@ -4,7 +4,7 @@
     "name": "NSW Map",
     "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
     "sources": {
-        "openstreetmap": {
+        "osm_raster": {
             "type": "raster",
             "tiles": [
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -12,21 +12,28 @@
             "tileSize": 256,
             "maxzoom": 22
         },
-        "nsw_addresses_tiles": {
+        "addresses": {
             "type": "vector",
             "tiles": [
                 "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_addresses/{z}/{x}/{y}.pbf"
             ],
             "maxzoom": 22
         },
-        "nsw_roads_tiles": {
+        "roads": {
             "type": "vector",
             "tiles": [
                 "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_roads/{z}/{x}/{y}.pbf"
             ],
             "maxzoom": 22
         },
-        "nsw_lots_tiles": {
+        "openlots": {
+            "type": "vector",
+            "tiles": [
+                "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_lots/{z}/{x}/{y}.pbf"
+            ],
+            "maxzoom": 22
+        },
+        "restrictedlots": {
             "type": "vector",
             "tiles": [
                 "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_lots/{z}/{x}/{y}.pbf"
@@ -36,14 +43,14 @@
     },
     "layers": [
         {
-            "id": "basemap",
+            "id": "osm-basemap",
             "type": "raster",
-            "source": "openstreetmap"
+            "source": "osm_raster"
         },
         {
-            "id": "addresses-point-circle",
+            "id": "addresses-circle",
             "type": "circle",
-            "source": "nsw_addresses_tiles",
+            "source": "addresses",
             "source-layer": "nsw_addresses",
             "paint": {
                 "circle-radius": 4,
@@ -55,9 +62,9 @@
             }
         },
         {
-            "id": "lots-general-fill",
+            "id": "lots-fill",
             "type": "fill",
-            "source": "nsw_lots_tiles",
+            "source": "openlots",
             "source-layer": "nsw_lots",
             "paint": {
                 "fill-opacity": 0.2,
@@ -70,9 +77,9 @@
             ]
         },
         {
-            "id": "lots-general-outline",
+            "id": "lots-outline",
             "type": "line",
-            "source": "nsw_lots_tiles",
+            "source": "openlots",
             "source-layer": "nsw_lots",
             "paint": {
                 "line-color": "#d2dae2",
@@ -86,9 +93,9 @@
             ]
         },
         {
-            "id": "roads-network-outline",
+            "id": "roads-outline",
             "type": "line",
-            "source": "nsw_roads_tiles",
+            "source": "roads",
             "source-layer": "nsw_roads",
             "layout": {
                 "line-join": "round",
@@ -107,9 +114,9 @@
             }
         },
         {
-            "id": "roads-network-fill",
+            "id": "roads-fill",
             "type": "line",
-            "source": "nsw_roads_tiles",
+            "source": "roads",
             "source-layer": "nsw_roads",
             "layout": {
                 "line-join": "round",
@@ -130,7 +137,7 @@
         {
             "id": "roads-label",
             "type": "symbol",
-            "source": "nsw_roads_tiles",
+            "source": "roads",
             "source-layer": "nsw_roads",
             "layout": {
                 "text-field": ["get", "name"],
@@ -151,7 +158,7 @@
         {
             "id": "lots-user-restricted-fill",
             "type": "fill",
-            "source": "nsw_lots_tiles",
+            "source": "restrictedlots",
             "source-layer": "nsw_lots",
             "filter": [
                 "==", ["get", "user_id"], ""
@@ -184,7 +191,7 @@
         {
             "id": "lots-user-restricted-outline",
             "type": "line",
-            "source": "nsw_lots_tiles",
+            "source": "restrictedlots",
             "source-layer": "nsw_lots",
             "filter": [
                 "==", ["get", "user_id"], ""

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,9 @@
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Mulish Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Smooch+Sans:wght@100..900&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Mulish:ital,wght@0,200..1000;1,200..1000&family=Smooch+Sans:wght@100..900&display=swap"
+        rel="stylesheet">
     <!-- Barlow Font -->
     <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;700&display=swap" rel="stylesheet">
     <!-- Mapbox GL JS CSS -->
@@ -22,6 +25,7 @@
     <!-- SortableJS for drag-and-drop in layer list -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 </head>
+
 <body class="flex flex-col min-h-screen font-['Barlow'] bg-gray-50">
 
     <!-- Navbar -->
@@ -33,24 +37,64 @@
             <div class="flex items-center space-x-4">
                 <!-- User Controls -->
                 <div class="relative">
-                <!-- User Panel Dropdown Toggle -->
-                <button id="user-menu-button" class="flex items-center text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300 rounded-full py-2 px-4 transition-colors duration-200 hover:bg-gray-100">
-                    <span id="user-display-name" class="mr-2 text-lg font-medium">Guest</span>
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
+                    <!-- User Panel Dropdown Toggle -->
+                    <button id="user-menu-button"
+                        class="flex items-center text-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-300 rounded-full py-2 px-4 transition-colors duration-200 hover:bg-gray-100">
+                        <span id="user-display-name" class="mr-2 text-lg font-medium">Guest</span>
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7">
+                            </path>
+                        </svg>
+                    </button>
 
-                <!-- User Panel Dropdown Content -->
-                <div id="user-menu-dropdown" class="absolute right-0 mt-1 w-48 bg-white shadow-lg hidden z-30 border border-gray-100 rounded-none">
-                    <div class="block text-sm text-gray-700 hover:bg-gray-100 rounded-none py-2 px-4" id="user-email-display">Loading...</div>
-                    <button id="settings-button" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150 rounded-none">Settings</button>
-                    <button id="logout-button" class="block w-full text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 rounded-none py-2 px-4">Logout</button>
+                    <!-- User Panel Dropdown Content -->
+                    <div id="user-menu-dropdown"
+                        class="absolute right-0 mt-1 w-48 bg-white shadow-lg hidden z-30 border border-gray-100 rounded-none">
+                        <div class="block text-sm text-gray-700 hover:bg-gray-100 rounded-none py-2 px-4"
+                            id="user-email-display">Loading...</div>
+                        <button id="settings-button"
+                            class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150 rounded-none">Settings</button>
+                        <button id="logout-button"
+                            class="block w-full text-left text-sm text-red-600 hover:bg-red-50 transition-colors duration-150 rounded-none py-2 px-4">Logout</button>
+                    </div>
                 </div>
             </div>
-        </div>
     </nav>
 
+    <!-- Sidebar Toggle Button -->
+    <button id="sidebar-toggle"
+        class="fixed right-1 z-30 flex items-center justify-center bg-white p-0 rounded-full shadow-lg hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-all duration-300"
+        style="top: 50%; transform: translateY(-50%); width: 34px; height: 34px; min-width: 34px; min-height: 34px;">
+        <span class="flex items-center justify-center w-8 h-8 rounded-full bg-white">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                data-lucide="layers" class="lucide lucide-layers w-5 h-5 text-gray-600">
+                <path
+                    d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z">
+                </path>
+                <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"></path>
+                <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"></path>
+            </svg>
+        </span>
+    </button>
+
+    <!-- Sidebar Panel -->
+    <div id="sidebar"
+        class="fixed right-0 top-[81px] bottom-14 w-96 bg-white shadow-lg transform translate-x-full transition-all duration-300 ease-in-out z-20 rounded-xl border border-gray-200">
+        <div class="p-2 font-['Barlow'] h-full flex flex-col">
+            <h2 class="text-xl font-bold mb-2">Layers Panel</h2>
+            <hr class="mb-4 border-gray-300">
+            <div class="flex-grow overflow-y-auto custom-scrollbar">
+                <ul id="layer-list" class="space-y-2 w-full"></ul>
+                    <!-- Layer controls/content will be injected by JS as <li> -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <!-- Map Container -->
-    <div id="map" class="flex-grow w-full relative z-10">
+    <div id="map" class="flex-grow w-full relative z-10 transition-all duration-300 ease-in-out">
         <!-- Custom Map Controls -->
         <div id="custom-map-controls" class="absolute bottom-4 right-4 z-10 flex space-x-2">
             <button id="zoom-in" class="map-control-button" aria-label="Zoom In">
@@ -63,23 +107,21 @@
                 <i data-lucide="compass"></i>
             </button>
         </div>
-        <!-- Sidebar (shared for both modes) -->
-        <div id="sidebar" class="fixed right-0 top-[calc(65px+1rem)] bottom-14 w-80 bg-white shadow-lg transform translate-x-full transition-all duration-300 ease-in-out z-10 rounded-xl border border-gray-200 group">
-            <div id="sidebar-content" class="p-4 font-['Barlow']">
-                <!-- Content will be injected by JS -->
-            </div>
-        </div>
     </div>
 
     <!-- Settings Modal -->
     <!-- Added bg-transparent and pointer-events-none to allow map interaction behind the modal -->
-    <div id="settings-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-transparent pointer-events-none">
+    <div id="settings-modal"
+        class="fixed inset-0 flex items-center justify-center z-50 hidden bg-transparent pointer-events-none">
         <!-- Inner modal content box - max-w-md for wider, p-6 for less height, fixed left for position -->
         <!-- Added pointer-events-auto to ensure interaction with modal content -->
-        <div id="modal-content-box" class="p-4 rounded-2xl shadow-xl max-w-md w-full border border-gray-200 fixed left-0 top-1/2 -translate-y-1/2 ml-4 pointer-events-auto">
+        <div id="modal-content-box"
+            class="p-4 rounded-2xl shadow-xl max-w-md w-full border border-gray-200 fixed left-0 top-1/2 -translate-y-1/2 ml-4 pointer-events-auto">
             <h4 class="text-4xl font-extrabold text-center text-gray-900 mb-8">Map Settings</h4>
             <button id="close-settings-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="feather feather-x">
                     <line x1="18" y1="6" x2="6" y2="18"></line>
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -88,35 +130,29 @@
             <form id="map-settings-form" class="space-y-4"> <!-- Reduced space-y from 6 to 4 -->
                 <!-- Address Search Section -->
                 <div class="border-b border-gray-200 pb-4 mb-4 relative"> <!-- Reduced pb and mb from 6 to 4 -->
-                    <label for="address-search-input" class="block text-sm font-medium text-gray-700 mb-1">Search Address</label> <!-- Reduced mb from 2 to 1 -->
+                    <label for="address-search-input" class="block text-sm font-medium text-gray-700 mb-1">Search
+                        Address</label> <!-- Reduced mb from 2 to 1 -->
                     <div class="flex space-x-2"> <!-- Reduced space-x from 3 to 2 -->
-                        <input
-                            type="text"
-                            id="address-search-input"
+                        <input type="text" id="address-search-input"
                             class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base transition duration-150 ease-in-out"
-                            placeholder="e.g., Eiffel Tower, Paris"
-                        >
-                        <button
-                            type="button"
-                            id="search-address-button"
-                            class="px-4 py-2 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out"
-                        >
+                            placeholder="e.g., Eiffel Tower, Paris">
+                        <button type="button" id="search-address-button"
+                            class="px-4 py-2 border border-transparent rounded-lg shadow-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300 ease-in-out">
                             Search
                         </button>
                     </div>
                     <!-- Search Results Dropdown -->
-                    <ul id="search-results-dropdown" class="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-full mt-1 max-h-48 overflow-y-auto z-20 hidden">
+                    <ul id="search-results-dropdown"
+                        class="absolute bg-white border border-gray-300 rounded-lg shadow-lg w-full mt-1 max-h-48 overflow-y-auto z-20 hidden">
                         <!-- Results will be dynamically inserted here -->
                     </ul>
                 </div>
 
                 <!-- Action Buttons for Map Interaction -->
-                <div class="flex flex-col space-y-4 border-b border-gray-200 pb-4 mb-4"> <!-- Reduced pb and mb from 6 to 4 -->
-                    <button
-                        type="button"
-                        id="pick-on-map-button"
-                        class="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transform hover:scale-105 transition-all duration-300 ease-in-out"
-                    >
+                <div class="flex flex-col space-y-4 border-b border-gray-200 pb-4 mb-4">
+                    <!-- Reduced pb and mb from 6 to 4 -->
+                    <button type="button" id="pick-on-map-button"
+                        class="w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transform hover:scale-105 transition-all duration-300 ease-in-out">
                         <i data-lucide="map-pin" class="mr-2 h-6 w-6"></i> Pick Location on Map
                     </button>
                 </div>
@@ -124,59 +160,62 @@
                 <!-- Manual Input Section - All in one row -->
                 <div class="flex flex-wrap -mx-1 mb-4"> <!-- Reduced -mx from 2 to 1, mb from 6 to 4 -->
                     <div class="w-full sm:w-1/3 px-1 mb-2 sm:mb-0"> <!-- Reduced px from 2 to 1, mb from 4 to 2 -->
-                        <label for="modal-zoom-level" class="block text-sm font-medium text-gray-700 mb-1">Zoom</label> <!-- Reduced mb from 2 to 1 -->
-                        <input
-                            type="number"
-                            id="modal-zoom-level"
+                        <label for="modal-zoom-level" class="block text-sm font-medium text-gray-700 mb-1">Zoom</label>
+                        <!-- Reduced mb from 2 to 1 -->
+                        <input type="number" id="modal-zoom-level"
                             class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base transition duration-150 ease-in-out"
-                            min="0" max="22" step="1" required
-                        >
+                            min="0" max="22" step="1" required>
                     </div>
                     <div class="w-full sm:w-1/3 px-1 mb-2 sm:mb-0"> <!-- Reduced px from 2 to 1, mb from 4 to 2 -->
-                        <label for="modal-latitude" class="block text-sm font-medium text-gray-700 mb-1">Latitude</label> <!-- Reduced mb from 2 to 1 -->
-                        <input
-                            type="number"
-                            id="modal-latitude"
+                        <label for="modal-latitude"
+                            class="block text-sm font-medium text-gray-700 mb-1">Latitude</label>
+                        <!-- Reduced mb from 2 to 1 -->
+                        <input type="number" id="modal-latitude"
                             class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base transition duration-150 ease-in-out"
-                            min="-90" max="90" step="0.0001" required
-                        >
+                            min="-90" max="90" step="0.0001" required>
                     </div>
                     <div class="w-full sm:w-1/3 px-1"> <!-- Reduced px from 2 to 1 -->
-                        <label for="modal-longitude" class="block text-sm font-medium text-gray-700 mb-1">Longitude</label> <!-- Reduced mb from 2 to 1 -->
-                        <input
-                            type="number"
-                            id="modal-longitude"
+                        <label for="modal-longitude"
+                            class="block text-sm font-medium text-gray-700 mb-1">Longitude</label>
+                        <!-- Reduced mb from 2 to 1 -->
+                        <input type="number" id="modal-longitude"
                             class="block w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-1 focus:ring-indigo-500 sm:text-base transition duration-150 ease-in-out"
-                            min="-180" max="180" step="0.0001" required
-                        >
+                            min="-180" max="180" step="0.0001" required>
                     </div>
                 </div>
 
                 <div>
-                    <button
-                        type="submit"
-                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transform hover:scale-105 transition-all duration-300 ease-in-out"
-                    >
+                    <button type="submit"
+                        class="w-full flex justify-center py-2 px-4 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-gradient-to-r from-blue-700 to-blue-900 hover:from-blue-800 hover:to-blue-950 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-700 transform hover:scale-105 transition-all duration-300 ease-in-out">
                         Save Settings
                     </button>
                 </div>
             </form>
             <!-- Modal-specific message box -->
-            <div id="modal-message-box" class="hidden mt-4 p-3 rounded-lg text-sm text-center font-medium" role="alert"></div>
+            <div id="modal-message-box" class="hidden mt-4 p-3 rounded-lg text-sm text-center font-medium" role="alert">
+            </div>
         </div>
     </div>
 
     <!-- Main Message Box for Alerts (now fixed at bottom-center) -->
-    <div id="messageBox" class="hidden mt-6 p-4 rounded-lg text-sm text-center font-medium fixed bottom-4 left-1/2 -translate-x-1/2 z-50" role="alert"></div>
+    <div id="messageBox"
+        class="hidden mt-6 p-4 rounded-lg text-sm text-center font-medium fixed bottom-4 left-1/2 -translate-x-1/2 z-50"
+        role="alert"></div>
 
     <!-- Collapsible AG Grid Table at Bottom -->
     <!-- AG Grid Offers Table (bottom docked) -->
-    <div id="offers-table-container" class="fixed left-0 w-full z-30 transition-transform duration-300 ease-in-out bg-white shadow-xl border-t border-gray-200 overflow-hidden" style="bottom: 0; height: 40vh; transform: translateY(100%);">
+    <div id="offers-table-container"
+        class="fixed left-0 w-full z-30 transition-transform duration-300 ease-in-out bg-white shadow-xl border-t border-gray-200 overflow-hidden"
+        style="bottom: 0; height: 40vh; transform: translateY(100%);">
         <div id="offers-ag-grid" class="w-full h-full ag-theme-alpine"></div>
     </div>
     <!-- Floating Chevron Toggle Button (smaller, with gap) -->
-    <button id="toggle-offers-table" class="fixed left-1/2 z-40 rounded-full bg-gray-200 bg-opacity-70 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out" style="transform: translate(-50%, 0); bottom: 0; width: 26px; height: 26px;">
-        <svg id="offers-table-chevron" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-600 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <button id="toggle-offers-table"
+        class="fixed left-1/2 z-40 rounded-full bg-gray-200 bg-opacity-70 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out"
+        style="transform: translate(-50%, 0); bottom: 0; width: 26px; height: 26px;">
+        <svg id="offers-table-chevron" xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4 text-gray-600 transition-transform duration-300" fill="none" viewBox="0 0 24 24"
+            stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
     </button>
@@ -188,4 +227,5 @@
     <!-- Custom JavaScript for the map dashboard -->
     <script src="/static/js/map_dashboard.js"></script>
 </body>
+
 </html>

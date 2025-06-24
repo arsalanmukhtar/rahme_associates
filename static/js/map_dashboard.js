@@ -35,16 +35,34 @@ document.addEventListener('DOMContentLoaded', () => {
     // State variable to track if map picking mode is active
     let isPickingLocation = false;
 
+    // Sidebar elements
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const layerListUl = document.getElementById('layer-list');
+    const mapContainer = document.getElementById('map');
+
+    let sidebarOpen = false;
 
     // --- Session Timeout Configuration ---
-    const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 1 minutes in milliseconds (adjust as needed)
+    const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds (adjust as needed)
     let timeoutId; // Variable to hold our timeout ID
 
     // Function to display messages in the custom message box
     function showMessage(message, type = 'info', targetBox = pageMessageBox) {
         targetBox.textContent = message;
         // Reset classes to ensure proper styling from scratch
-        targetBox.className = `mt-6 p-4 rounded-lg text-sm text-center font-medium ${type}`;
+        targetBox.className = `mt-6 p-4 rounded-lg text-sm text-center font-medium`;
+
+        // Apply type-specific classes
+        if (type === 'info') {
+            targetBox.classList.add('bg-blue-100', 'text-blue-800');
+        } else if (type === 'success') {
+            targetBox.classList.add('bg-green-100', 'text-green-800');
+        } else if (type === 'error') {
+            targetBox.classList.add('bg-red-100', 'text-red-800');
+        } else if (type === 'warning') {
+            targetBox.classList.add('bg-yellow-100', 'text-yellow-800');
+        }
 
         // For the main page message box, apply fixed positioning
         if (targetBox === pageMessageBox) {
@@ -269,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 let errorDetail = tokenResponse.statusText;
                 try {
                     const errorJson = await tokenResponse.json();
-                    errorDetail = errorJson.detail || errorDetail;
+                    errorDetail = errorJson.detail || errorJson;
                 } catch (e) {
                     console.error("Error parsing Mapbox token response JSON:", e);
                 }
@@ -475,7 +493,356 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.addEventListener('click', resetInactivityTimer);
         document.body.addEventListener('scroll', resetInactivityTimer);
         resetInactivityTimer();
-    }    initializeMapWithUserData();
+
+        // --- Sidebar Layer Management ---
+        console.log('Map loaded, populating layers panel.');
+        // Ensure Lucide icons are created for the newly added elements
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons(); // Re-create icons for new elements
+        }
+        populateLayerList(); // Initial population of layers
+    }
+
+    initializeMapWithUserData();
+
+    // Function to update sidebar and map layout
+    function updateSidebarLayout() {
+        if (sidebarOpen) {
+            sidebar.classList.remove('translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            // Adjust the toggle button position
+            sidebarToggleBtn.style.right = 'calc(24rem + 1rem)'; // 24rem (sidebar width) + 1rem (margin)
+            mapContainer.classList.add('mr-96'); // Adjust map to make space, assuming 96 corresponds to sidebar width (24rem = 96px)
+        } else {
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('translate-x-full');
+            // Reset the toggle button position
+            sidebarToggleBtn.style.right = '1rem'; // Original right-1, 1rem looks good
+            mapContainer.classList.remove('mr-96');
+        }
+    }
+
+    // Toggle sidebar visibility
+    sidebarToggleBtn.addEventListener('click', () => {
+        sidebarOpen = !sidebarOpen;
+        updateSidebarLayout();
+        // If opening, populate layers
+        if (sidebarOpen && map) { // Ensure map is initialized
+            populateLayerList();
+        }
+    });
+
+    // Initial sidebar state on page load
+    updateSidebarLayout();
+
+    // --- Layer Management Functions ---
+    let mapLayers = []; // To store processed layers for sidebar
+
+    /**
+     * Groups map layers by their source, excluding raster layers, and preserves order.
+     * @param {mapboxgl.Map} map - The Mapbox GL JS map instance.
+     * @returns {Array<Object>} An array of grouped layer objects.
+     */
+    function groupLayersBySource(map) {
+        const styleLayers = map.getStyle().layers;
+        const grouped = {};
+        const orderedSources = [];
+
+        styleLayers.forEach(layer => {
+            if (layer.type === 'raster' || !layer.source) {
+                return;
+            }
+            if (!grouped[layer.source]) {
+                grouped[layer.source] = {
+                    name: layer.source,
+                    layers: []
+                };
+                orderedSources.push(layer.source);
+            }
+            grouped[layer.source].layers.push({
+                id: layer.id,
+                type: layer.type,
+                source: layer.source,
+                visibility: map.getLayoutProperty(layer.id, 'visibility') || 'visible'
+            });
+        });
+
+        const orderedGroupedLayers = orderedSources.map(sourceName => grouped[sourceName]);
+        return orderedGroupedLayers;
+    }
+
+    function getLayerOrderForSidebar(layer) {
+        // symbol/label (top), fill (middle), outline (bottom)
+        if (/symbol|label/i.test(layer.id)) return 0;
+        if (/fill/i.test(layer.id)) return 1;
+        if (/outline/i.test(layer.id)) return 2;
+        return 99;
+    }
+    function getLayerOrderForMap(layer) {
+        // outline (bottom), fill (middle), symbol/label (top)
+        if (/outline/i.test(layer.id)) return 0;
+        if (/fill/i.test(layer.id)) return 1;
+        if (/symbol|label/i.test(layer.id)) return 2;
+        return 99;
+    }
+
+    function populateLayerList() {
+        layerListUl.innerHTML = '';
+        mapLayers = groupLayersBySource(map);
+
+        mapLayers.forEach(group => {
+            // Sort layers for sidebar: symbol/label (top), fill (middle), outline (bottom)
+            const sortedLayers = [...group.layers].sort((a, b) => {
+                // Custom order: symbol/label (top), fill (middle), outline (bottom)
+                const getOrder = l => {
+                    if (/symbol|label/i.test(l.id)) return 0;
+                    if (/fill/i.test(l.id)) return 1;
+                    if (/outline/i.test(l.id)) return 2;
+                    return 99;
+                };
+                return getOrder(a) - getOrder(b);
+            });
+            // Create a parent LI for the source group itself
+            const sourceGroupLi = document.createElement('li');
+            sourceGroupLi.className = 'layer-group-item bg-gray-100 p-2 rounded-lg mb-2 shadow-sm';
+            sourceGroupLi.setAttribute('draggable', 'true');
+            sourceGroupLi.innerHTML = `
+                <div class="flex items-center justify-between cursor-pointer toggle-source-group" data-source-name="${group.name}">
+                    <span class="font-bold text-gray-900 capitalize flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-vertical drag-handle cursor-move mr-2" style="color:#222;stroke:#222;"></svg>
+                        ${group.name.replace(/_/g, ' ')} Layers
+                    </span>
+                    <div class="flex items-center space-x-2">
+                        <button class="toggle-source-visibility-btn p-1 rounded-full hover:bg-gray-200" data-source-name="${group.name}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-down text-gray-600 transition-transform duration-200 chevron-toggle-icon"><path d="m6 9 6 6 6-6"></path></svg>
+                    </div>
+                </div>
+                <ul id="source-group-${group.name}" class="space-y-1 ml-4 layer-sub-list mt-2 transition-all duration-300 ease-in-out overflow-hidden max-h-screen"></ul>
+            `;
+            layerListUl.appendChild(sourceGroupLi);
+
+            const subList = sourceGroupLi.querySelector(`#source-group-${group.name}`);
+            let isSourceGroupVisible = true;
+
+            sortedLayers.forEach(layer => {
+                const layerLi = document.createElement('li');
+                layerLi.className = 'layer-item flex items-center justify-between py-0.5 px-2 bg-white rounded-md shadow-sm text-sm';
+                layerLi.setAttribute('data-layer-id', layer.id);
+                layerLi.setAttribute('data-layer-type', layer.type);
+                // No drag handle here
+                const initialVisibility = map.getLayoutProperty(layer.id, 'visibility');
+                if (initialVisibility === 'none') {
+                    isSourceGroupVisible = false;
+                }
+                const eyeIconHtml = initialVisibility === 'none' ?
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off text-gray-400"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-.22M4.24 12.04c.1-.17.2-.33.31-.5l.09-.16c.36-.61.68-1.29.98-2.02m.09-.16A1.82 1.82 0 0 1 6 9.42"/><path d="M8.56 2.06c.32.18.66.36 1 .53M12 4c7 0 10 7 10 7a1.82 1.82 0 0 1-.22.58"/><path d="M14.56 16.56C13.9 17.2 13.06 17.7 12 18c-1.39-.38-2.45-1.12-3-2"/></svg>' :
+                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+                layerLi.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="font-medium text-gray-800 layer-name">${layer.id}</span>
+                    </div>
+                    <button class="toggle-visibility-btn p-1 rounded-full hover:bg-gray-200" data-layer-id="${layer.id}">
+                        ${eyeIconHtml}
+                    </button>
+                `;
+                subList.appendChild(layerLi);
+            });
+
+            // Update source group eye icon based on group visibility
+            const sourceGroupIconContainer = sourceGroupLi.querySelector('.toggle-source-visibility-btn');
+            if (isSourceGroupVisible) {
+                sourceGroupIconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+            } else {
+                sourceGroupIconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off text-gray-400"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-.22M4.24 12.04c.1-.17.2-.33.31-.5l.09-.16c.36-.61.68-1.29.98-2.02m.09-.16A1.82 1.82 0 0 1 6 9.42"/><path d="M8.56 2.06c.32.18.66.36 1 .53M12 4c7 0 10 7 10 7a1.82 1.82 0 0 1-.22.58"/><path d="M14.56 16.56C13.9 17.2 13.06 17.7 12 18c-1.39-.38-2.45-1.12-3-2"/></svg>';
+            }
+        });
+
+        // --- Make #layer-list scrollable and set height to 50% of sidebar, add border ---
+        layerListUl.style.overflowY = 'auto';
+        layerListUl.style.height = '50%';
+        layerListUl.style.maxHeight = '50%';
+        // layerListUl.style.border = '1px solid #e5e7eb'; // Tailwind gray-300
+        layerListUl.style.borderRadius = '0.5rem'; // rounded
+
+        // --- SortableJS for group drag (layer-group-item) ---
+        new Sortable(layerListUl, {
+            animation: 150,
+            handle: '.layer-group-item', // Only drag using the group item itself
+            draggable: '.layer-group-item',
+            onEnd: handleGroupDragEnd
+        });
+
+        // --- SortableJS for each sub-list (layer group) ---
+        document.querySelectorAll('.layer-sub-list').forEach(subListElement => {
+            new Sortable(subListElement, {
+                animation: 150,
+                handle: '.drag-handle', // Only drag using the grip icon
+                draggable: '.layer-item',
+                onEnd: handleLayerDragEnd
+            });
+        });
+
+        // Attach event listeners for individual layer toggle visibility buttons
+        document.querySelectorAll('.toggle-visibility-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const layerId = event.currentTarget.dataset.layerId;
+                const currentVisibility = map.getLayoutProperty(layerId, 'visibility');
+                const newVisibility = currentVisibility === 'none' ? 'visible' : 'none';
+                map.setLayoutProperty(layerId, 'visibility', newVisibility);
+
+                // Update the icon
+                const iconContainer = event.currentTarget;
+                if (newVisibility === 'visible') {
+                    iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+                } else {
+                    iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off text-gray-400"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-.22M4.24 12.04c.1-.17.2-.33.31-.5l.09-.16c.36-.61.68-1.29.98-2.02m.09-.16A1.82 1.82 0 0 1 6 9.42"/><path d="M8.56 2.06c.32.18.66.36 1 .53M12 4c7 0 10 7 10 7a1.82 1.82 0 0 1-.22.58"/><path d="M14.56 16.56C13.9 17.2 13.06 17.7 12 18c-1.39-.38-2.45-1.12-3-2"/></svg>';
+                }
+                // Check if all layers in the group are now hidden/visible and update source group icon
+                const parentUl = event.currentTarget.closest('.layer-sub-list');
+                if (parentUl) {
+                    const sourceName = parentUl.id.replace('source-group-', '');
+                    const sourceGroupToggleButton = document.querySelector(`.toggle-source-visibility-btn[data-source-name="${sourceName}"]`);
+                    if (sourceGroupToggleButton) {
+                        const layersInGroup = Array.from(parentUl.children);
+                        let allGroupLayersVisible = true;
+                        layersInGroup.forEach(li => {
+                            const currentLayerId = li.dataset.layerId;
+                            if (map.getLayoutProperty(currentLayerId, 'visibility') === 'none') {
+                                allGroupLayersVisible = false;
+                            }
+                        });
+                        if (allGroupLayersVisible) {
+                            sourceGroupToggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+                        } else {
+                            sourceGroupToggleButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off text-gray-400"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-.22M4.24 12.04c.1-.17.2-.33.31-.5l.09-.16c.36-.61.68-1.29.98-2.02m.09-.16A1.82 1.82 0 0 1 6 9.42"/><path d="M8.56 2.06c.32.18.66.36 1 .53M12 4c7 0 10 7 10 7a1.82 1.82 0 0 1-.22.58"/><path d="M14.56 16.56C13.9 17.2 13.06 17.7 12 18c-1.39-.38-2.45-1.12-3-2"/></svg>';
+                        }
+                    }
+                }
+            });
+        });
+
+        // Attach event listeners for source group toggle visibility buttons
+        document.querySelectorAll('.toggle-source-visibility-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const sourceName = event.currentTarget.dataset.sourceName;
+                const subList = document.getElementById(`source-group-${sourceName}`);
+                if (!subList) return;
+
+                const layersInGroup = Array.from(subList.children);
+                if (layersInGroup.length === 0) return;
+
+                let allVisible = true;
+                // Check if all layers in the group are currently visible
+                layersInGroup.forEach(li => {
+                    const layerId = li.dataset.layerId;
+                    if (map.getLayoutProperty(layerId, 'visibility') === 'none') {
+                        allVisible = false;
+                    }
+                });
+
+                const newVisibility = allVisible ? 'none' : 'visible';
+
+                layersInGroup.forEach(li => {
+                    const layerId = li.dataset.layerId;
+                    map.setLayoutProperty(layerId, 'visibility', newVisibility);
+                    const iconContainer = li.querySelector('.toggle-visibility-btn');
+                    if (newVisibility === 'visible') {
+                        iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+                    } else {
+                        iconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off text-gray-400"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-.22M4.24 12.04c.1-.17.2-.33.31-.5l.09-.16c.36-.61.68-1.29.98-2.02m.09-.16A1.82 1.82 0 0 1 6 9.42"/><path d="M8.56 2.06c.32.18.66.36 1 .53M12 4c7 0 10 7 10 7a1.82 1.82 0 0 1-.22.58"/><path d="M14.56 16.56C13.9 17.2 13.06 17.7 12 18c-1.39-.38-2.45-1.12-3-2"/></svg>';
+                    }
+                });
+
+                // Update the source group eye icon
+                const sourceGroupIconContainer = event.currentTarget;
+                if (newVisibility === 'visible') {
+                    sourceGroupIconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye text-blue-500"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>';
+                } else {
+                    sourceGroupIconContainer.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off text-gray-400"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-10-7-10-7a1.8 1.8 0 0 1 0-.22M4.24 12.04c.1-.17.2-.33.31-.5l.09-.16c.36-.61.68-1.29.98-2.02m.09-.16A1.82 1.82 0 0 1 6 9.42"/><path d="M8.56 2.06c.32.18.66.36 1 .53M12 4c7 0 10 7 10 7a1.82 1.82 0 0 1-.22.58"/><path d="M14.56 16.56C13.9 17.2 13.06 17.7 12 18c-1.39-.38-2.45-1.12-3-2"/></svg>';
+                }
+            });
+        });
+
+        // Attach event listeners for source group collapse/expand
+        document.querySelectorAll('.toggle-source-group').forEach(button => {
+            button.addEventListener('click', (event) => {
+                // Prevent collapse/expand if the click was on the eye button
+                if (event.target.closest('.toggle-source-visibility-btn')) {
+                    return;
+                }
+                const sourceName = event.currentTarget.dataset.sourceName;
+                const subList = document.getElementById(`source-group-${sourceName}`);
+                const chevronIcon = event.currentTarget.querySelector('.chevron-toggle-icon');
+
+                if (subList) {
+                    subList.classList.toggle('max-h-0'); // Toggle collapse
+                    if (subList.classList.contains('max-h-0')) {
+                        chevronIcon.classList.remove('rotate-0');
+                        chevronIcon.classList.add('rotate-180'); // Point up when collapsed
+                    } else {
+                        chevronIcon.classList.remove('rotate-180');
+                        chevronIcon.classList.add('rotate-0'); // Point down when expanded
+                    }
+                }
+            });
+        });
+    }
+
+    // --- Handle group drag-and-drop ---
+    function handleGroupDragEnd(event) {
+        // Get the new order of group names from the DOM
+        const groupOrder = Array.from(layerListUl.children)
+            .filter(li => li.classList.contains('layer-group-item'))
+            .map(li => li.querySelector('.toggle-source-group').dataset.sourceName);
+        // Log the new group order
+        console.log('New group order:', groupOrder);
+        // After group drag, also update the map layer order accordingly
+        reorderAllLayersOnMap();
+    }
+
+    // --- Handle layer drag-and-drop ---
+    function handleLayerDragEnd(event) {
+        reorderAllLayersOnMap();
+    }
+
+    // --- Reorder all layers on the map based on sidebar order ---
+    function reorderAllLayersOnMap() {
+        // For each group, sort for map: outline (bottom), fill (middle), symbol/label (top)
+        let orderedLayerIds = [];
+        Array.from(layerListUl.children).forEach(groupLi => {
+            const subList = groupLi.querySelector('.layer-sub-list');
+            if (subList) {
+                let groupLayers = Array.from(subList.children).map(layerLi => ({
+                    id: layerLi.dataset.layerId,
+                    type: layerLi.dataset.layerType,
+                    group: groupLi.querySelector('.toggle-source-group').dataset.sourceName
+                }));
+                // Custom order for map: outline (bottom), fill (middle), symbol/label (top)
+                groupLayers.sort((a, b) => {
+                    const getOrder = l => {
+                        if (/outline/i.test(l.id)) return 0;
+                        if (/fill/i.test(l.id)) return 1;
+                        if (/symbol|label/i.test(l.id)) return 2;
+                        return 99;
+                    };
+                    return getOrder(a) - getOrder(b);
+                });
+                orderedLayerIds.push(...groupLayers);
+            }
+        });
+        // Reverse for Mapbox rendering
+        orderedLayerIds = orderedLayerIds.reverse();
+        for (let i = 0; i < orderedLayerIds.length; i++) {
+            const layerId = orderedLayerIds[i].id;
+            const beforeLayer = orderedLayerIds[i + 1] ? orderedLayerIds[i + 1].id : undefined;
+            if (map.getLayer(layerId)) {
+                map.moveLayer(layerId, beforeLayer);
+            }
+        }
+        console.log('Mapbox layers reordered (outline/fill/symbol-label rule):', orderedLayerIds.map(l => l.id));
+    }
 
     // --- AG Grid Offers Table Logic ---
     const offersTableContainer = document.getElementById('offers-table-container');
@@ -601,7 +968,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
             }
         }
-        
         return filter;
     }
 });
