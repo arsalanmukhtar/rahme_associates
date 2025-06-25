@@ -7,7 +7,7 @@
         "plain_raster": {
             "type": "raster",
             "tiles": [
-                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR42mP8z8BQz0AEYBxVSFQwCjAAAJQAAQwA9nQAAAAASUVORK5CYII="
+                "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}.png"
             ],
             "tileSize": 256,
             "maxzoom": 22,
@@ -28,7 +28,7 @@
                 "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
             ],
             "tileSize": 256,
-            "maxzoom": 20,
+            "maxzoom": 22,
             "attribution": "© OpenStreetMap, © Carto"
         },
         "maptiler_raster": {
@@ -68,6 +68,13 @@
                 "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_lots/{z}/{x}/{y}.pbf"
             ],
             "maxzoom": 22
+        },
+        "lots_centers": {
+            "type": "vector",
+            "tiles": [
+                "http://localhost:8000/api/v1/map-data/proxy/tiles/nsw_lots_centers/{z}/{x}/{y}.pbf"
+            ],
+            "maxzoom": 22
         }
     },
     "layers": [
@@ -97,21 +104,7 @@
             "source": "positron_raster"
         },
         {
-            "id": "addresses-circle",
-            "type": "circle",
-            "source": "addresses",
-            "source-layer": "nsw_addresses",
-            "paint": {
-                "circle-radius": 4,
-                "circle-color": "#0074D9",
-                "circle-opacity": 0.8,
-                "circle-stroke-width": 2,
-                "circle-stroke-color": "#ffffff",
-                "circle-stroke-opacity": 0.9
-            }
-        },
-        {
-            "id": "lots-fill",
+            "id": "general_lots-fill",
             "type": "fill",
             "source": "lots",
             "source-layer": "nsw_lots",
@@ -129,12 +122,12 @@
             ]
         },
         {
-            "id": "lots-outline",
+            "id": "general_lots-outline",
             "type": "line",
             "source": "lots",
             "source-layer": "nsw_lots",
             "paint": {
-                "line-color": "#d2dae2",
+                "line-color": "#b0b6bb",
                 "line-width": 0.3,
                 "line-opacity": 0.7
             },
@@ -146,6 +139,84 @@
                 ],
                 null
             ]
+        },
+        {
+            "id": "active_lots-fill",
+            "type": "fill",
+            "source": "lots",
+            "source-layer": "nsw_lots",
+            "filter": [
+                "==",
+                [
+                    "get",
+                    "user_id"
+                ],
+                6
+            ],
+            "paint": {
+                "fill-opacity": 0.2,
+                "fill-color": [
+                    "match",
+                    [
+                        "get",
+                        "icon"
+                    ],
+                    "Accepted",
+                    "#a0e4a5",
+                    "Agreement Prep",
+                    "#000000",
+                    "Agreement Signed",
+                    "#ffdecf",
+                    "Built",
+                    "#77553d",
+                    "Construction",
+                    "#FFCD34",
+                    "Countered",
+                    "#fc9942",
+                    "For Sale",
+                    "#BC674A",
+                    "Not Home",
+                    "#000000",
+                    "Not Interested",
+                    "#f74354",
+                    "Not Interested2",
+                    "#f74354",
+                    "Offer Given",
+                    "#ffda45",
+                    "Rejected Offer",
+                    "#f74354",
+                    "Settled",
+                    "#c1e9af",
+                    "Sold",
+                    "#0fa50f",
+                    "Tenanted",
+                    "#453BE6",
+                    "Uknown",
+                    "#60B7FF",
+                    "Wants Offer",
+                    "#ffcdbe",
+                    "#ffffff"
+                ]
+            }
+        },
+        {
+            "id": "active_lots-outline",
+            "type": "line",
+            "source": "lots",
+            "source-layer": "nsw_lots",
+            "filter": [
+                "==",
+                [
+                    "get",
+                    "user_id"
+                ],
+                6
+            ],
+            "paint": {
+                "line-color": "#bdc3c7",
+                "line-width": 0.3,
+                "line-opacity": 0.5
+            }
         },
         {
             "id": "roads-outline",
@@ -265,81 +336,118 @@
             }
         },
         {
-            "id": "lots-user-restricted-fill",
-            "type": "fill",
-            "source": "lots",
-            "source-layer": "nsw_lots",
-            "filter": [
-                "==",
-                [
-                    "get",
-                    "user_id"
-                ],
-                ""
-            ],
+            "id": "parcel_addresses-point",
+            "type": "circle",
+            "source": "addresses",
+            "source-layer": "nsw_addresses",
             "paint": {
-                "fill-opacity": 0.2,
-                "fill-color": [
-                    "match",
-                    [
-                        "get",
-                        "icon"
-                    ],
-                    "Accepted",
-                    "#a0e4a5",
-                    "Agreement Prep",
-                    "#000000",
-                    "Agreement Signed",
-                    "#ffdecf",
-                    "Built",
-                    "#77553d",
-                    "Construction",
-                    "#FFCD34",
-                    "Countered",
-                    "#fc9942",
-                    "For Sale",
-                    "#BC674A",
-                    "Not Home",
-                    "#000000",
-                    "Not Interested",
-                    "#f74354",
-                    "Not Interested2",
-                    "#f74354",
-                    "Offer Given",
-                    "#ffda45",
-                    "Rejected Offer",
-                    "#f74354",
-                    "Settled",
-                    "#c1e9af",
-                    "Sold",
-                    "#0fa50f",
-                    "Tenanted",
-                    "#453BE6",
-                    "Uknown",
-                    "#60B7FF",
-                    "Wants Offer",
-                    "#ffcdbe",
-                    "#ffffff"
-                ]
+                "circle-radius": 2,
+                "circle-color": "#0074D9",
+                "circle-opacity": 0.8,
+                "circle-stroke-width": 1,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-opacity": 0.9
             }
         },
         {
-            "id": "lots-user-restricted-outline",
-            "type": "line",
-            "source": "lots",
-            "source-layer": "nsw_lots",
-            "filter": [
-                "==",
-                [
+            "id": "parcel_addresses-label",
+            "type": "symbol",
+            "source": "addresses",
+            "source-layer": "nsw_addresses",
+            "minzoom": 18,
+            "layout": {
+                "text-field": [
                     "get",
-                    "user_id"
+                    "legal_parcel_id"
                 ],
-                ""
-            ],
+                "text-font": [
+                    "Open Sans Bold"
+                ],
+                "text-size": [
+                    "interpolate",
+                    [
+                        "linear"
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    16,
+                    6,
+                    19,
+                    9,
+                    22,
+                    12
+                ],
+                "text-anchor": "center",
+                "symbol-placement": "point"
+            },
             "paint": {
-                "line-color": "#bdc3c7",
-                "line-width": 0.3,
-                "line-opacity": 0.5
+                "text-color": "#4a4a4a",
+                "text-halo-color": "#ffffff",
+                "text-halo-width": 0.5
+            }
+        },
+        {
+            "id": "active_lots_icons-marker",
+            "type": "symbol",
+            "source": "lots_centers",
+            "source-layer": "nsw_lots_centers",
+            "filter": [
+                "==", ["get", "user_id"], 6
+            ],
+            "minzoom": 16,
+            "layout": {
+                "icon-image": [
+                    "match",["get", "icon"],
+                    "Accepted", "accepted",
+                    "Agreement Prep", "agreement_prep",
+                    "Agreement Signed", "agreement_signed",
+                    "Built", "built",
+                    "Construction", "construction",
+                    "Countered", "countered",
+                    "For Sale", "for_sale",
+                    "Not Home", "not_home",
+                    "Not Interested", "not_interested",
+                    "Not Interested2", "not_interested2",
+                    "Offer Given", "offer_given",
+                    "Rejected Offer", "rejected_offer",
+                    "Settled", "settled",
+                    "Sold", "sold",
+                    "Tenanted", "tenanted",
+                    "Uknown",  "unknown",
+                    "Wants Offer", "wants_offer",
+                    ""
+                ],
+                "icon-size": [
+                    "interpolate", ["linear"], ["zoom"],
+                    16, 0.05,
+                    19, 0.5,
+                    22, 0.7 
+                ],
+                "icon-offset": [
+                    "interpolate", ["linear"], ["zoom"],
+                    16, ["literal", [0, -2]],
+                    17, ["literal", [0, -2.5]],
+                    18, ["literal", [0, -3]]
+                ],
+                "icon-anchor": "center",
+                "text-field": ["get", "number_fir"],
+                "text-size": [
+                    "interpolate", ["linear"], ["zoom"],
+                    16, 7,
+                    19, 11,
+                    22, 14
+                ],
+                "text-anchor": "center",
+                "text-offset": [
+                    "interpolate", ["linear"], ["zoom"],
+                    16, ["literal", [0, 2]],
+                    17, ["literal", [0, 2.5]],
+                    18, ["literal", [0, 3]]
+                ]
+            },
+            "paint": {
+                "text-color": "#2c2c2c"
             }
         }
     ]

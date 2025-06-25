@@ -388,7 +388,7 @@ document.addEventListener('DOMContentLoaded', () => {
             center: initialCenter,
             zoom: initialZoom,
             minZoom: 0,
-            maxZoom: 19,
+            maxZoom: 22,
             attributionControl: false, // Explicitly disable attribution control
             hash: true // Enable hash in URL for easy sharing
         });
@@ -424,7 +424,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         marker = new mapboxgl.Marker()
             .setLngLat(initialCenter)
-            .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML("<h3>Your Last Saved Location</h3><p>This is where your map was centered.</p>"))
+            // .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML("<h3>Your Last Saved Location</h3><p>This is where your map was centered.</p>"))
             .addTo(map);
 
         // console.log('Map initialized with Mapbox GL JS and user data.');
@@ -557,7 +557,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- Minimal Layers Panel in Sidebar ---
         // Only sidebar toggle and minimal panel remain
         sidebar.innerHTML = `
-            <div class="p-4">
+            <div class="p-3">
                 <h2 class="text-lg font-semibold mb-2">Layers Panel</h2>
                 <hr class="mb-2">
             </div>
@@ -581,6 +581,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const basemapSwitcherDropdown = document.getElementById('basemap-switcher-dropdown');
         const basemapSwitcherLabel = document.getElementById('basemap-switcher-label');
 
+        // --- UI Consistency: Remove rounded-full, set width and border radius ---
+        // Remove rounded-full from button if present
+        if (basemapSwitcherBtn.classList.contains('rounded-full')) {
+            basemapSwitcherBtn.classList.remove('rounded-full');
+        }
+        // Add consistent width and border radius to button and dropdown
+        basemapSwitcherBtn.classList.add('w-[200px]', 'rounded-lg');
+        basemapSwitcherBtn.style.width = '200px';
+        basemapSwitcherBtn.style.borderRadius = '0.5rem';
+        basemapSwitcherDropdown.classList.add('w-[200px]', 'rounded-lg');
+        basemapSwitcherDropdown.style.width = '200px';
+        basemapSwitcherDropdown.style.borderRadius = '0.5rem';
+
         // Helper to get current basemap (topmost visible basemap layer)
         function getCurrentBasemapId() {
             for (let i = basemapLayers.length - 1; i >= 0; i--) {
@@ -594,16 +607,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Render dropdown options
         function renderBasemapOptions() {
-            const menu = basemapSwitcherDropdown.querySelector('.py-1');
+            const menu = basemapSwitcherDropdown.querySelector('.basemap-toggler');
             menu.innerHTML = '';
+            // Add global basemap visibility toggle
+            const globalToggle = document.createElement('button');
+            globalToggle.className = 'w-full flex items-center justify-between px-4 py-2 text-sm text-gray-600 hover:bg-red-100 transition-colors duration-150 font-semibold border-b border-gray-200 font-[600]';
+            globalToggle.innerHTML = `
+                <span>Show Basemaps</span>
+                <span class="flex items-center">
+                    <i data-lucide="eye" class="basemap-eye-on text-blue-500" style="display:inline;width:1.2rem;height:1.2rem;"></i>
+                    <i data-lucide="eye-off" class="basemap-eye-off text-gray-400" style="display:none;width:1.2rem;height:1.2rem;"></i>
+                </span>
+            `;
+            menu.appendChild(globalToggle);
+            let allVisible = basemapLayers.some(b => map.getLayer(b.id) && map.getLayoutProperty(b.id, 'visibility') !== 'none');
+            // Set initial icon state
+            globalToggle.querySelector('.basemap-eye-on').style.display = allVisible ? 'inline' : 'none';
+            globalToggle.querySelector('.basemap-eye-off').style.display = allVisible ? 'none' : 'inline';
+            // Set label if all basemaps are off
+            if (!allVisible) {
+                basemapSwitcherLabel.textContent = 'Basemap Off';
+            } else {
+                const currentId = getCurrentBasemapId();
+                const picked = basemapLayers.find(b => b.id === currentId);
+                basemapSwitcherLabel.textContent = picked ? picked.name : 'Change Basemap';
+            }
+            globalToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                allVisible = basemapLayers.some(b => map.getLayer(b.id) && map.getLayoutProperty(b.id, 'visibility') !== 'none');
+                basemapLayers.forEach(b => {
+                    if (map.getLayer(b.id)) {
+                        map.setLayoutProperty(b.id, 'visibility', allVisible ? 'none' : 'visible');
+                    }
+                });
+                // Update icons
+                globalToggle.querySelector('.basemap-eye-on').style.display = allVisible ? 'none' : 'inline';
+                globalToggle.querySelector('.basemap-eye-off').style.display = allVisible ? 'inline' : 'none';
+                // Update label
+                if (allVisible) {
+                    basemapSwitcherLabel.textContent = 'Basemap Off';
+                } else {
+                    const currentId = getCurrentBasemapId();
+                    const picked = basemapLayers.find(b => b.id === currentId);
+                    basemapSwitcherLabel.textContent = picked ? picked.name : 'Change Basemap';
+                }
+            });
+            // Add regular basemap options
             basemapLayers.forEach(basemap => {
                 const option = document.createElement('button');
-                option.className = 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition-colors duration-150 flex items-center';
+                option.className = 'w-full text-left px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-150 flex items-center';
                 option.textContent = basemap.name;
                 option.setAttribute('role', 'menuitem');
                 option.dataset.basemapId = basemap.id;
                 if (getCurrentBasemapId() === basemap.id) {
-                    option.classList.add('font-bold', 'text-blue-700');
+                    option.classList.add('font-semibold', 'text-orange-500');
                 }
                 option.addEventListener('click', () => {
                     setBasemap(basemap.id);
@@ -611,6 +668,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 menu.appendChild(option);
             });
+            // Re-init Lucide icons for dynamic elements
+            if (window.lucide && lucide.createIcons) {
+                lucide.createIcons();
+            }
         }
 
         // Set the picked basemap visible, others hidden, and move it last in style order
@@ -679,6 +740,142 @@ document.addEventListener('DOMContentLoaded', () => {
                 basemapSwitcherLabel.textContent = 'No Basemaps';
             }
         });
+
+        // --- Group layers by layer_name and log to console ---
+        function groupLayersByNameFromStyle(style) {
+            if (!style || !style.layers) return {};
+            const groups = {};
+            style.layers.forEach(layer => {
+                // Only consider layers with a dash and skip those with '-basemap' in id
+                if (!layer.id.includes('-') || /-basemap$/i.test(layer.id)) return;
+                const parts = layer.id.split('-');
+                if (parts.length < 2) return;
+                // layer_name-type (e.g., roads-outline)
+                const type = parts.pop();
+                const name = parts.join('-');
+                if (!groups[name]) groups[name] = [];
+                // Unshift to reverse the order compared to style.json
+                groups[name].unshift(layer.id);
+            });
+            // No need to sort, as unshift preserves reverse order
+            return groups;
+        }
+        // On map load, log the grouped layers by name
+        map.on('load', () => {
+            const style = map.getStyle();
+            const grouped = groupLayersByNameFromStyle(style);
+            console.log('Layer groups by name:', grouped);
+            renderLayerGroupsUL(grouped);
+        });
+
+        // --- Render grouped layers as UL in sidebar ---
+        function prettyLayerName(name) {
+            // Convert snake_case or kebab-case to Title Case
+            return name.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        }
+        function prettyLayerId(id) {
+            // Remove layer_name- prefix and type suffix, then prettify
+            const parts = id.split('-');
+            if (parts.length < 2) return id;
+            const type = parts.pop();
+            return type.charAt(0).toUpperCase() + type.slice(1);
+        }
+        function renderLayerGroupsUL(groups) {
+            // Remove any previous UL
+            let oldUl = document.getElementById('layer-groups-ul');
+            if (oldUl) oldUl.remove();
+            const ul = document.createElement('ul');
+            ul.id = 'layer-groups-ul';
+            ul.style.overflowY = 'auto';
+            ul.style.maxHeight = '50vh';
+            ul.style.borderRadius = '0.5rem';
+            ul.style.marginTop = '0.5rem';
+            ul.style.background = '#fff';
+            ul.className = 'px-1 py-1';
+            // Reverse the order of layer groups for display
+            const groupEntries = Object.entries(groups).reverse();
+            groupEntries.forEach(([layerName, layerIds]) => {
+                const li = document.createElement('li');
+                li.className = 'flex items-center justify-between mb-1 bg-gray-100 rounded-lg shadow-sm px-2 py-1';
+                li.setAttribute('draggable', 'true');
+                // Only show the group name, eye toggle, and grip icon
+                li.innerHTML = `
+                    <span class="text-gray-900 text-sm select-none font-normal">${prettyLayerName(layerName)}</span>
+                    <span class="flex items-center space-x-2">
+                        <button class="toggle-group-visibility-btn p-1 rounded-full hover:bg-gray-200" data-layer-group="${layerName}" aria-label="Toggle group visibility">
+                            <i data-lucide="eye" class="eye-icon eye-on text-blue-500" style="display:inline;width:1.2rem;height:1.2rem;"></i>
+                            <i data-lucide="eye-off" class="eye-icon eye-off text-gray-400" style="display:none;width:1.2rem;height:1.2rem;"></i>
+                        </button>
+                        <span class="grip-icon-wrapper ml-1" style="display:inline-flex;align-items:center;cursor:grab;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#545454" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-icon lucide-grip"><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/><circle cx="5" cy="19" r="1"/></svg>
+                        </span>
+                    </span>
+                `;
+                ul.appendChild(li);
+            });
+            // Insert after <hr> in sidebar
+            const sidebar = document.getElementById('sidebar');
+            const hr = sidebar.querySelector('hr');
+            if (hr) {
+                hr.parentNode.insertBefore(ul, hr.nextSibling);
+            } else {
+                sidebar.appendChild(ul);
+            }
+            // Add <hr> under the UL
+            const ulHr = document.createElement('hr');
+            ulHr.className = 'my-2 border-gray-300';
+            ul.parentNode.insertBefore(ulHr, ul.nextSibling);
+
+            // Group eye icon toggles all layers in group
+            ul.querySelectorAll('.toggle-group-visibility-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const group = btn.dataset.layerGroup;
+                    const layerIds = groups[group];
+                    let anyVisible = false;
+                    layerIds.forEach(layerId => {
+                        if (map.getLayer(layerId) && map.getLayoutProperty(layerId, 'visibility') !== 'none') {
+                            anyVisible = true;
+                        }
+                    });
+                    // If any are visible, hide all; else show all
+                    layerIds.forEach(layerId => {
+                        if (map.getLayer(layerId)) {
+                            map.setLayoutProperty(layerId, 'visibility', anyVisible ? 'none' : 'visible');
+                        }
+                    });
+                    // Toggle eye icon
+                    const eyeOn = btn.querySelector('.eye-on');
+                    const eyeOff = btn.querySelector('.eye-off');
+                    if (anyVisible) {
+                        if (eyeOn) eyeOn.style.display = 'none';
+                        if (eyeOff) eyeOff.style.display = 'inline';
+                    } else {
+                        if (eyeOn) eyeOn.style.display = 'inline';
+                        if (eyeOff) eyeOff.style.display = 'none';
+                    }
+                });
+            });
+            // Pan hand cursor on grip icon hover
+            ul.querySelectorAll('.grip-icon-wrapper').forEach(wrapper => {
+                wrapper.addEventListener('mouseenter', () => {
+                    wrapper.style.cursor = 'grab';
+                });
+                wrapper.addEventListener('mousedown', () => {
+                    wrapper.style.cursor = 'grabbing';
+                });
+                wrapper.addEventListener('mouseleave', () => {
+                    wrapper.style.cursor = 'grab';
+                });
+                wrapper.addEventListener('mouseup', () => {
+                    wrapper.style.cursor = 'grab';
+                });
+            });
+            // Re-init Lucide icons for dynamic elements
+            if (window.lucide && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        }
     }
 
     // Initialize the map with user data

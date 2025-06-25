@@ -9,17 +9,21 @@
 ############## Actual commands for tables ##############
 
 # nsw_addresses
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_addresses --layer nsw_addresses --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 13 14 15 16 17 18
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_addresses" --layer nsw_addresses --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_addresses --layer nsw_addresses --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_addresses" --layer nsw_addresses --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
 
 # nsw_roads
 python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_roads --layer nsw_roads --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
 python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_roads" --layer nsw_roads --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
 
 # nsw_lots
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_lots --layer nsw_lots --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 13 14 15 16 17 18 
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_roads" --layer nsw_lots --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_lots --layer nsw_lots --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_lots" --layer nsw_lots --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
+
+# nsw_lots_centers
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_lots_centers --layer nsw_lots_centers --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_lots_centers" --layer nsw_lots_centers --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
 
 # nsw_landzones
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_landzones --layer nsw_landzones --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 8 9 10 11 12 13 14 15 16 17 18
-python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_landzones" --layer nsw_landzones --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 8 9 10 11 12 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --schema public --table nsw_landzones --layer nsw_landzones --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
+python postgis2mvt.py --dbname nsw --user postgres --password postgres --host localhost --port 5432 --query "SELECT * FROM public.nsw_landzones" --layer nsw_landzones --bbox 151.16359 -33.86696 151.22493 -33.93055 --zoom 10 11 12 13 14 15 16 17 18
