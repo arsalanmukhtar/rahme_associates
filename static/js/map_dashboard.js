@@ -625,17 +625,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (map.getLayer(basemapId)) {
                 map.setLayoutProperty(basemapId, 'visibility', 'visible');
             }
-            // Move picked basemap to last in style order
-            const allLayerIds = map.getStyle().layers.map(l => l.id);
-            let lastBasemapIdx = -1;
-            for (let i = allLayerIds.length - 1; i >= 0; i--) {
-                if (basemapLayers.some(b => b.id === allLayerIds[i])) {
-                    lastBasemapIdx = i;
+            // Move picked basemap just before the first non-raster layer
+            const styleLayers = map.getStyle().layers;
+            // Find all basemap (raster) layers
+            const rasterBasemapIds = basemapLayers.map(b => b.id);
+            // Find the first non-raster layer
+            let insertBeforeLayerId = null;
+            for (let i = 0; i < styleLayers.length; i++) {
+                const l = styleLayers[i];
+                if (l.type !== 'raster') {
+                    insertBeforeLayerId = l.id;
                     break;
                 }
             }
-            if (lastBasemapIdx !== -1 && map.getLayer(basemapId)) {
-                map.moveLayer(basemapId);
+            // Move the selected basemap just before the first non-raster layer, or to the top if all are raster
+            if (map.getLayer(basemapId)) {
+                if (insertBeforeLayerId) {
+                    map.moveLayer(basemapId, insertBeforeLayerId);
+                } else {
+                    map.moveLayer(basemapId);
+                }
             }
             // Update label
             const picked = basemapLayers.find(b => b.id === basemapId);
@@ -752,4 +761,30 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (window.agGrid) initOffersGrid();
+
+    // Collapse sidebar or offers table when clicking outside
+    document.addEventListener('mousedown', function(event) {
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const offersTableContainer = document.getElementById('offers-table-container');
+        const offersTableToggle = document.getElementById('toggle-offers-table');
+
+        // If click is inside sidebar or its toggle, or inside offers table or its toggle, do nothing
+        if (
+            (sidebar && sidebar.contains(event.target)) ||
+            (sidebarToggle && sidebarToggle.contains(event.target)) ||
+            (offersTableContainer && offersTableContainer.contains(event.target)) ||
+            (offersTableToggle && offersTableToggle.contains(event.target))
+        ) {
+            return;
+        }
+        // Collapse sidebar if open
+        if (typeof sidebarOpen !== 'undefined' && sidebarOpen) {
+            sidebarToggleBtn.click();
+        }
+        // Collapse offers table if open
+        if (typeof offersTableOpen !== 'undefined' && offersTableOpen) {
+            offersTableToggleBtn.click();
+        }
+    });
 });

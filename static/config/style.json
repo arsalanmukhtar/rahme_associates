@@ -4,6 +4,15 @@
     "name": "NSW Map",
     "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
     "sources": {
+        "plain_raster": {
+            "type": "raster",
+            "tiles": [
+                "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR42mP8z8BQz0AEYBxVSFQwCjAAAJQAAQwA9nQAAAAASUVORK5CYII="
+            ],
+            "tileSize": 256,
+            "maxzoom": 22,
+            "attribution": "© Plain white basemap"
+        },
         "osm_raster": {
             "type": "raster",
             "tiles": [
@@ -15,17 +24,29 @@
         },
         "carto_raster": {
             "type": "raster",
-            "tiles": ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
+            "tiles": [
+                "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"
+            ],
             "tileSize": 256,
             "maxzoom": 20,
             "attribution": "© OpenStreetMap, © Carto"
         },
         "maptiler_raster": {
             "type": "raster",
-            "tiles": ["https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=aM1rev9ZuLUqj681DQKm"],
+            "tiles": [
+                "https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=aM1rev9ZuLUqj681DQKm"
+            ],
             "tileSize": 256,
             "maxzoom": 22,
             "attribution": "© MapTiler © OpenStreetMap contributors"
+        },
+        "positron_raster": {
+            "type": "raster",
+            "tiles": [
+                "https://api.maptiler.com/maps/positron/{z}/{x}/{y}.png?key=aM1rev9ZuLUqj681DQKm"
+            ],
+            "tileSize": 256,
+            "maxzoom": 22
         },
         "addresses": {
             "type": "vector",
@@ -51,6 +72,11 @@
     },
     "layers": [
         {
+            "id": "plain-basemap",
+            "type": "raster",
+            "source": "plain_raster"
+        },
+        {
             "id": "osm-basemap",
             "type": "raster",
             "source": "osm_raster"
@@ -64,6 +90,11 @@
             "id": "maptiler-basemap",
             "type": "raster",
             "source": "maptiler_raster"
+        },
+        {
+            "id": "positron-basemap",
+            "type": "raster",
+            "source": "positron_raster"
         },
         {
             "id": "addresses-circle",
@@ -90,7 +121,10 @@
             },
             "filter": [
                 "!=",
-                ["get", "number_fir"],
+                [
+                    "get",
+                    "number_fir"
+                ],
                 null
             ]
         },
@@ -106,7 +140,10 @@
             },
             "filter": [
                 "!=",
-                ["get", "number_fir"],
+                [
+                    "get",
+                    "number_fir"
+                ],
                 null
             ]
         },
@@ -120,14 +157,33 @@
                 "line-cap": "round"
             },
             "paint": {
-                "line-width": ["interpolate", ["exponential", 1.5], ["zoom"],
-                    14, 2,
-                    20, 30
+                "line-width": [
+                    "interpolate",
+                    [
+                        "exponential",
+                        1.5
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    14,
+                    2,
+                    20,
+                    30
                 ],
                 "line-color": "#f2a787",
-                "line-opacity": ["interpolate", ["linear"], ["zoom"],
-                    14, 0.7,
-                    22, 1
+                "line-opacity": [
+                    "interpolate",
+                    [
+                        "linear"
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    14,
+                    0.7,
+                    22,
+                    1
                 ]
             }
         },
@@ -141,14 +197,33 @@
                 "line-cap": "round"
             },
             "paint": {
-                "line-width": ["interpolate", ["exponential", 1.5], ["zoom"],
-                    14, 1.5,
-                    20, 20
+                "line-width": [
+                    "interpolate",
+                    [
+                        "exponential",
+                        1.5
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    14,
+                    1.5,
+                    20,
+                    20
                 ],
                 "line-color": "#f0d9ce",
-                "line-opacity": ["interpolate", ["linear"], ["zoom"],
-                    14, 0.5,
-                    22, 1
+                "line-opacity": [
+                    "interpolate",
+                    [
+                        "linear"
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    14,
+                    0.5,
+                    22,
+                    1
                 ]
             }
         },
@@ -158,11 +233,27 @@
             "source": "roads",
             "source-layer": "nsw_roads",
             "layout": {
-                "text-field": ["get", "name"],
-                "text-font": ["Open Sans Bold"],
+                "text-field": [
+                    "get",
+                    "name"
+                ],
+                "text-font": [
+                    "Open Sans Bold"
+                ],
                 "text-size": [
-                "interpolate", ["linear"],
-                ["zoom"], 16, 8, 19, 15, 22, 19
+                    "interpolate",
+                    [
+                        "linear"
+                    ],
+                    [
+                        "zoom"
+                    ],
+                    16,
+                    8,
+                    19,
+                    15,
+                    22,
+                    19
                 ],
                 "text-anchor": "center",
                 "symbol-placement": "line"
@@ -179,29 +270,55 @@
             "source": "lots",
             "source-layer": "nsw_lots",
             "filter": [
-                "==", ["get", "user_id"], ""
+                "==",
+                [
+                    "get",
+                    "user_id"
+                ],
+                ""
             ],
             "paint": {
                 "fill-opacity": 0.2,
                 "fill-color": [
-                    "match",["get", "icon"],
-                    "Accepted", "#a0e4a5",
-                    "Agreement Prep", "#000000",
-                    "Agreement Signed", "#ffdecf",
-                    "Built", "#77553d",
-                    "Construction", "#FFCD34",
-                    "Countered", "#fc9942",
-                    "For Sale", "#BC674A",
-                    "Not Home", "#000000",
-                    "Not Interested", "#f74354",
-                    "Not Interested2", "#f74354",
-                    "Offer Given", "#ffda45",
-                    "Rejected Offer", "#f74354",
-                    "Settled", "#c1e9af",
-                    "Sold", "#0fa50f",
-                    "Tenanted", "#453BE6",
-                    "Uknown", "#60B7FF",
-                    "Wants Offer", "#ffcdbe",
+                    "match",
+                    [
+                        "get",
+                        "icon"
+                    ],
+                    "Accepted",
+                    "#a0e4a5",
+                    "Agreement Prep",
+                    "#000000",
+                    "Agreement Signed",
+                    "#ffdecf",
+                    "Built",
+                    "#77553d",
+                    "Construction",
+                    "#FFCD34",
+                    "Countered",
+                    "#fc9942",
+                    "For Sale",
+                    "#BC674A",
+                    "Not Home",
+                    "#000000",
+                    "Not Interested",
+                    "#f74354",
+                    "Not Interested2",
+                    "#f74354",
+                    "Offer Given",
+                    "#ffda45",
+                    "Rejected Offer",
+                    "#f74354",
+                    "Settled",
+                    "#c1e9af",
+                    "Sold",
+                    "#0fa50f",
+                    "Tenanted",
+                    "#453BE6",
+                    "Uknown",
+                    "#60B7FF",
+                    "Wants Offer",
+                    "#ffcdbe",
                     "#ffffff"
                 ]
             }
@@ -212,7 +329,12 @@
             "source": "lots",
             "source-layer": "nsw_lots",
             "filter": [
-                "==", ["get", "user_id"], ""
+                "==",
+                [
+                    "get",
+                    "user_id"
+                ],
+                ""
             ],
             "paint": {
                 "line-color": "#bdc3c7",
