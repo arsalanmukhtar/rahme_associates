@@ -361,6 +361,35 @@ document.addEventListener('DOMContentLoaded', () => {
             hash: true // Enable hash in URL for easy sharing
         });
 
+        // Wait for map to load and all style layers to be loaded, then log all layer ids
+        function logAllLayerIdsWhenLoaded(map) {
+            if (!map) return;
+            map.on('load', function() {
+                // Wait for all sources to be loaded
+                const checkSourcesLoaded = () => {
+                    const style = map.getStyle();
+                    if (!style || !style.sources) return false;
+                    for (const sourceId in style.sources) {
+                        const source = map.getSource(sourceId);
+                        if (!source || !source.loaded || (typeof source.loaded === 'function' && !source.loaded())) {
+                            return false;
+                        }
+                    }
+                    return true;
+                };
+                // Poll until all sources are loaded
+                const poll = setInterval(() => {
+                    if (checkSourcesLoaded()) {
+                        clearInterval(poll);
+                        // All sources loaded, now log all layer ids
+                        const layerIds = map.getStyle().layers.map(l => l.id);
+                        console.log('All style layers loaded. Layer IDs:', layerIds);
+                    }
+                }, 100);
+            });
+        }
+        logAllLayerIdsWhenLoaded(map);
+
         marker = new mapboxgl.Marker()
             .setLngLat(initialCenter)
             .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML("<h3>Your Last Saved Location</h3><p>This is where your map was centered.</p>"))
