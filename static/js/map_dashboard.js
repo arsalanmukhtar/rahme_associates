@@ -39,8 +39,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const sidebarToggleBtn = document.getElementById('sidebar-toggle');
     const sidebar = document.getElementById('sidebar');
     const mapContainer = document.getElementById('map');
-
     let sidebarOpen = false;
+
+    // Toggle sidebar visibility
+    sidebarToggleBtn.addEventListener('click', () => {
+        sidebarOpen = !sidebarOpen;
+        if (sidebarOpen) {
+            sidebar.classList.remove('translate-x-full');
+            sidebar.classList.add('translate-x-0');
+            sidebar.classList.add('mr-2'); // Add mr-2 when open
+            // Adjust the toggle button position for new width (18rem)
+            sidebarToggleBtn.style.right = 'calc(18rem + 1rem)';
+            mapContainer.classList.add('mr-[18rem]');
+        } else {
+            sidebar.classList.remove('translate-x-0');
+            sidebar.classList.add('translate-x-full');
+            sidebar.classList.remove('mr-2'); // Remove mr-2 when closed
+            sidebarToggleBtn.style.right = '1rem';
+            mapContainer.classList.remove('mr-[18rem]');
+        }
+    });
+    // Initial sidebar state on page load
+    if (sidebarOpen) {
+        sidebar.classList.remove('translate-x-full');
+        sidebar.classList.add('translate-x-0');
+        sidebar.classList.add('mr-2');
+        sidebarToggleBtn.style.right = 'calc(18rem + 1rem)';
+        mapContainer.classList.add('mr-[18rem]');
+    } else {
+        sidebar.classList.remove('translate-x-0');
+        sidebar.classList.add('translate-x-full');
+        sidebar.classList.remove('mr-2');
+        sidebarToggleBtn.style.right = '1rem';
+        mapContainer.classList.remove('mr-[18rem]');
+    }
 
     // --- Session Timeout Configuration ---
     const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes in milliseconds (adjust as needed)
@@ -530,43 +562,118 @@ document.addEventListener('DOMContentLoaded', () => {
                 <hr class="mb-2">
             </div>
         `;
-    }
 
-    initializeMapWithUserData();
-
-    // Toggle sidebar visibility
-    sidebarToggleBtn.addEventListener('click', () => {
-        sidebarOpen = !sidebarOpen;
-        if (sidebarOpen) {
-            sidebar.classList.remove('translate-x-full');
-            sidebar.classList.add('translate-x-0');
-            sidebar.classList.add('mr-2'); // Add mr-2 when open
-            // Adjust the toggle button position for new width (18rem)
-            sidebarToggleBtn.style.right = 'calc(18rem + 1rem)';
-            mapContainer.classList.add('mr-[18rem]');
-        } else {
-            sidebar.classList.remove('translate-x-0');
-            sidebar.classList.add('translate-x-full');
-            sidebar.classList.remove('mr-2'); // Remove mr-2 when closed
-            sidebarToggleBtn.style.right = '1rem';
-            mapContainer.classList.remove('mr-[18rem]');
+        // --- Basemap Switcher Logic (moved inside map init) ---
+        // Dynamically detect basemap layers (those with 'basemap' in their id and type 'raster')
+        let basemapLayers = [];
+        function detectBasemapLayers() {
+            if (!map || !map.getStyle) return [];
+            const style = map.getStyle();
+            if (!style || !style.layers) return [];
+            // Find all raster layers with 'basemap' in their id
+            return style.layers
+                .filter(l => l.type === 'raster' && l.id.toLowerCase().includes('basemap'))
+                .map(l => ({ id: l.id, name: l.id.replace(/-?basemap/i, '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()).trim() || 'Basemap' }));
         }
-    });
 
-    // Initial sidebar state on page load
-    if (sidebarOpen) {
-        sidebar.classList.remove('translate-x-full');
-        sidebar.classList.add('translate-x-0');
-        sidebar.classList.add('mr-2');
-        sidebarToggleBtn.style.right = 'calc(18rem + 1rem)';
-        mapContainer.classList.add('mr-[18rem]');
-    } else {
-        sidebar.classList.remove('translate-x-0');
-        sidebar.classList.add('translate-x-full');
-        sidebar.classList.remove('mr-2');
-        sidebarToggleBtn.style.right = '1rem';
-        mapContainer.classList.remove('mr-[18rem]');
+        // DOM elements
+        const basemapSwitcherBtn = document.getElementById('basemap-switcher-btn');
+        const basemapSwitcherDropdown = document.getElementById('basemap-switcher-dropdown');
+        const basemapSwitcherLabel = document.getElementById('basemap-switcher-label');
+
+        // Helper to get current basemap (topmost visible basemap layer)
+        function getCurrentBasemapId() {
+            for (let i = basemapLayers.length - 1; i >= 0; i--) {
+                const layer = map.getLayer(basemapLayers[i].id);
+                if (layer && map.getLayoutProperty(layer.id, 'visibility') !== 'none') {
+                    return layer.id;
+                }
+            }
+            return basemapLayers[0]?.id;
+        }
+
+        // Render dropdown options
+        function renderBasemapOptions() {
+            const menu = basemapSwitcherDropdown.querySelector('.py-1');
+            menu.innerHTML = '';
+            basemapLayers.forEach(basemap => {
+                const option = document.createElement('button');
+                option.className = 'w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-blue-100 transition-colors duration-150 flex items-center';
+                option.textContent = basemap.name;
+                option.setAttribute('role', 'menuitem');
+                option.dataset.basemapId = basemap.id;
+                if (getCurrentBasemapId() === basemap.id) {
+                    option.classList.add('font-bold', 'text-blue-700');
+                }
+                option.addEventListener('click', () => {
+                    setBasemap(basemap.id);
+                    basemapSwitcherDropdown.classList.add('hidden');
+                });
+                menu.appendChild(option);
+            });
+        }
+
+        // Set the picked basemap visible, others hidden, and move it last in style order
+        function setBasemap(basemapId) {
+            // Hide all basemaps
+            basemapLayers.forEach(b => {
+                if (map.getLayer(b.id)) {
+                    map.setLayoutProperty(b.id, 'visibility', 'none');
+                }
+            });
+            // Show picked basemap
+            if (map.getLayer(basemapId)) {
+                map.setLayoutProperty(basemapId, 'visibility', 'visible');
+            }
+            // Move picked basemap to last in style order
+            const allLayerIds = map.getStyle().layers.map(l => l.id);
+            let lastBasemapIdx = -1;
+            for (let i = allLayerIds.length - 1; i >= 0; i--) {
+                if (basemapLayers.some(b => b.id === allLayerIds[i])) {
+                    lastBasemapIdx = i;
+                    break;
+                }
+            }
+            if (lastBasemapIdx !== -1 && map.getLayer(basemapId)) {
+                map.moveLayer(basemapId);
+            }
+            // Update label
+            const picked = basemapLayers.find(b => b.id === basemapId);
+            basemapSwitcherLabel.textContent = picked ? picked.name : 'Change Basemap';
+            renderBasemapOptions();
+        }
+
+        // Dropdown open/close logic
+        basemapSwitcherBtn.addEventListener('click', () => {
+            if (basemapLayers.length === 0) {
+                basemapLayers = detectBasemapLayers();
+            }
+            basemapSwitcherDropdown.classList.toggle('hidden');
+            renderBasemapOptions();
+        });
+        // Hide dropdown on click outside
+        document.addEventListener('mousedown', (e) => {
+            if (!basemapSwitcherBtn.contains(e.target) && !basemapSwitcherDropdown.contains(e.target)) {
+                basemapSwitcherDropdown.classList.add('hidden');
+            }
+        });
+
+        // On map load, detect basemaps, set initial basemap and label
+        map.on('load', () => {
+            basemapLayers = detectBasemapLayers();
+            if (basemapLayers.length > 0) {
+                setBasemap(basemapLayers[basemapLayers.length - 1].id);
+            } else {
+                // If no basemaps found, show a disabled option
+                const menu = basemapSwitcherDropdown.querySelector('.py-1');
+                menu.innerHTML = '<div class="px-4 py-2 text-gray-400">No basemaps found</div>';
+                basemapSwitcherLabel.textContent = 'No Basemaps';
+            }
+        });
     }
+
+    // Initialize the map with user data
+    initializeMapWithUserData();
 
     // --- Offers Table Logic ---
     const offersTableContainer = document.getElementById('offers-table-container');
@@ -645,89 +752,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     if (window.agGrid) initOffersGrid();
-
-    // If you set font-family in JS, use Barlow:
-    document.body.style.fontFamily = "'Barlow', sans-serif";
-
-    async function getFieldList(schema, table) {
-        const authToken = localStorage.getItem('authToken');
-        try {
-            const resp = await fetch(`/api/v1/map-data/fields/${schema}/${table}`, {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            if (resp.ok) {
-                const data = await resp.json();
-                return data.fields || [];
-            }
-        } catch (e) {
-            console.error('Error fetching fields:', e);
-        }
-        return [];
-    }    async function createLayerFilter(fields) {
-        // Start with a valid default filter that accepts everything
-        let filter = ["all"];
-        
-        // Check for user_id
-        const hasUserId = fields.some(f => f.name === 'user_id');
-        // Log the presence of user_id
-        console.log({ hasUserId });
-
-        // If table has user_id, get the current user's ID and create a filter
-        if (hasUserId) {
-            const authToken = localStorage.getItem('authToken');
-            try {
-                const userResp = await fetch('/api/v1/users/me', {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                if (userResp.ok) {
-                    const userData = await userResp.json();
-                    filter.push(['==', ['get', 'user_id'], userData.id]);
-                    // console.log('Created user_id filter:', filter);
-                } else {
-                    console.error('Failed to fetch user data for filter, status:', userResp.status);
-                    return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
-                }
-            } catch (e) {
-                console.error('Error fetching user data for filter:', e);
-                return null; // Return null if we can't get the user ID - this prevents showing data without proper filtering
-            }
-        }
-        return filter;
-    }
-
-    // --- Layer Group List Logic ---
-
-    // Robust click-outside logic for sidebar and offers table
-    // (checks both containers and their toggle buttons)
-    document.addEventListener('mousedown', function(event) {
-        const sidebar = document.getElementById('sidebar');
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        const offersTableContainer = document.getElementById('offers-table-container');
-        const offersTableToggle = document.getElementById('toggle-offers-table');
-
-        if (
-            (sidebar && sidebar.contains(event.target)) ||
-            (sidebarToggle && sidebarToggle.contains(event.target)) ||
-            (offersTableContainer && offersTableContainer.contains(event.target)) ||
-            (offersTableToggle && offersTableToggle.contains(event.target))
-        ) {
-            return;
-        }
-
-        // Use your sidebar/offer open/close logic if available
-        if (typeof sidebarOpen !== 'undefined' && sidebarOpen) {
-            sidebar.classList.remove('translate-x-0');
-            sidebar.classList.add('translate-x-full');
-            sidebar.classList.remove('mr-2');
-            document.getElementById('sidebar-toggle').style.right = '1rem';
-            document.getElementById('map').classList.remove('mr-[18rem]');
-            sidebarOpen = false;
-        }
-        if (typeof offersTableOpen !== 'undefined' && offersTableOpen) {
-            offersTableContainer.style.transform = 'translateY(100%)';
-            document.getElementById('offers-table-chevron').style.transform = 'rotate(0deg)';
-            document.getElementById('toggle-offers-table').style.bottom = '10px';
-            offersTableOpen = false;
-        }
-    });
 });

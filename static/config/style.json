@@ -10,7 +10,22 @@
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
             ],
             "tileSize": 256,
-            "maxzoom": 22
+            "maxzoom": 22,
+            "attribution": "© OpenStreetMap contributors"
+        },
+        "carto_raster": {
+            "type": "raster",
+            "tiles": ["https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png"],
+            "tileSize": 256,
+            "maxzoom": 20,
+            "attribution": "© OpenStreetMap, © Carto"
+        },
+        "maptiler_raster": {
+            "type": "raster",
+            "tiles": ["https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=aM1rev9ZuLUqj681DQKm"],
+            "tileSize": 256,
+            "maxzoom": 22,
+            "attribution": "© MapTiler © OpenStreetMap contributors"
         },
         "addresses": {
             "type": "vector",
@@ -39,6 +54,16 @@
             "id": "osm-basemap",
             "type": "raster",
             "source": "osm_raster"
+        },
+        {
+            "id": "carto-basemap",
+            "type": "raster",
+            "source": "carto_raster"
+        },
+        {
+            "id": "maptiler-basemap",
+            "type": "raster",
+            "source": "maptiler_raster"
         },
         {
             "id": "addresses-circle",
