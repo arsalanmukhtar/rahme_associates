@@ -151,7 +151,7 @@
                     "get",
                     "user_id"
                 ],
-                6
+                null
             ],
             "paint": {
                 "fill-opacity": 0.2,
@@ -210,7 +210,7 @@
                     "get",
                     "user_id"
                 ],
-                6
+                null
             ],
             "paint": {
                 "line-color": "#bdc3c7",
@@ -388,14 +388,14 @@
             }
         },
         {
-            "id": "active_lots_icons-marker",
+            "id": "active_lots_icons-markers",
             "type": "symbol",
             "source": "lots_centers",
             "source-layer": "nsw_lots_centers",
             "filter": [
-                "==", ["get", "user_id"], 6
+                "==", ["get", "user_id"], null
             ],
-            "minzoom": 16,
+            "minzoom": 13,
             "layout": {
                 "icon-image": [
                     "match",["get", "icon"],
@@ -421,8 +421,8 @@
                 "icon-size": [
                     "interpolate", ["linear"], ["zoom"],
                     16, 0.05,
-                    19, 0.5,
-                    22, 0.7 
+                    19, 0.25,
+                    22, 0.4 
                 ],
                 "icon-offset": [
                     "interpolate", ["linear"], ["zoom"],

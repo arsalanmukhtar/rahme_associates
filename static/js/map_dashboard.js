@@ -1,7 +1,127 @@
 // static/js/map_dashboard.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    // console.log('Map Dashboard loaded successfully.');
+    // --- Inject Centered Search Bar in Navbar ---
+    function injectCenteredSearchBar() {
+        // Find the navbar container
+        const navbar = document.querySelector('.container.mx-auto.flex.justify-between.items-center');
+        if (!navbar) return;
+
+        // Check if search bar already exists
+        if (document.getElementById('navbar-search-form')) return;
+
+        // Create wrapper for flex centering
+        const flexWrapper = document.createElement('div');
+        flexWrapper.className = 'flex-1 flex justify-center';
+        flexWrapper.style.minWidth = '0';
+
+        // Create form
+        const form = document.createElement('form');
+        form.id = 'navbar-search-form';
+        form.className = 'relative w-full max-w-md';
+        form.setAttribute('autocomplete', 'off');
+
+        // Input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'navbar-search-input';
+        input.placeholder = 'Search address...';
+        input.className = 'w-full pl-4 pr-10 py-2 rounded-full border border-gray-200 focus:border-gray-300 focus:ring-1 focus:ring-gray-300 outline-none transition-all duration-150 text-gray-800 bg-white shadow-sm';
+        input.setAttribute('aria-label', 'Search address');
+
+        // Search icon (right side, absolute)
+        const icon = document.createElement('span');
+        icon.className = 'absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none';
+        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 104.5 4.5a7.5 7.5 0 0012.15 12.15z"/></svg>`;
+
+        // Dropdown for results
+        const dropdown = document.createElement('ul');
+        dropdown.id = 'navbar-search-dropdown';
+        dropdown.className = 'absolute left-0 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-40 max-h-80 overflow-auto hidden';
+        dropdown.style.listStyle = 'none';
+        dropdown.style.padding = '0';
+        dropdown.style.margin = '0';
+
+        // Assemble
+        form.appendChild(input);
+        form.appendChild(icon);
+        form.appendChild(dropdown);
+        flexWrapper.appendChild(form);
+
+        // Insert between logo and user controls
+        // Find logo (first child) and user controls (last child)
+        const logo = navbar.firstElementChild;
+        const userControls = navbar.lastElementChild;
+        // Remove any previous flex-1 spacers
+        Array.from(navbar.children).forEach(child => {
+            if (child.classList.contains('flex-1')) navbar.removeChild(child);
+        });
+        // Insert after logo, before user controls
+        navbar.insertBefore(flexWrapper, userControls);
+
+        // --- Geocoding logic ---
+        let lastFetchId = 0;
+        input.addEventListener('input', async () => {
+            const query = input.value.trim();
+            if (query.length < 3) {
+                dropdown.classList.add('hidden');
+                dropdown.innerHTML = '';
+                return;
+            }
+            const fetchId = ++lastFetchId;
+            dropdown.innerHTML = '<li class="px-4 py-2 text-gray-500">Searching...</li>';
+            dropdown.classList.remove('hidden');
+            try {
+                const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxAccessToken}&limit=7`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+                if (fetchId !== lastFetchId) return; // Outdated
+                if (data && data.features && data.features.length > 0) {
+                    dropdown.innerHTML = '';
+                    data.features.slice(0, 7).forEach(feature => {
+                        const li = document.createElement('li');
+                        li.className = 'px-4 py-2 cursor-pointer hover:bg-gray-100 text-gray-800 rounded-md';
+                        li.textContent = feature.place_name;
+                        li.addEventListener('click', () => {
+                            // Center map if available
+                            if (window.map && typeof window.map.flyTo === 'function') {
+                                window.map.flyTo({ center: feature.center, zoom: 14, essential: true });
+                                if (window.marker && typeof window.marker.setLngLat === 'function') {
+                                    window.marker.setLngLat(feature.center)
+                                        .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML(`<h3>Searched Location</h3><p>${feature.place_name}</p>`))
+                                        .addTo(window.map);
+                                }
+                            }
+                            input.value = feature.place_name;
+                            dropdown.classList.add('hidden');
+                        });
+                        dropdown.appendChild(li);
+                    });
+                } else {
+                    dropdown.innerHTML = '<li class="px-4 py-2 text-gray-500">No results found.</li>';
+                }
+            } catch (err) {
+                dropdown.innerHTML = '<li class="px-4 py-2 text-red-500">Error searching.</li>';
+            }
+        });
+        // Hide dropdown on click outside
+        document.addEventListener('mousedown', (e) => {
+            if (!form.contains(e.target)) {
+                dropdown.classList.add('hidden');
+            }
+        });
+        // Show border on focus
+        input.addEventListener('focus', () => {
+            input.classList.add('border-gray-300');
+        });
+        input.addEventListener('blur', () => {
+            input.classList.remove('border-gray-300');
+        });
+        // Prevent form submit
+        form.addEventListener('submit', e => e.preventDefault());
+    }
+
+    injectCenteredSearchBar();
 
     // Mapbox Access Token will be fetched from backend
     let mapboxAccessToken = '';
@@ -342,6 +462,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        let userId = null;
         try {
             const response = await fetch('/api/v1/users/me', {
                 method: 'GET',
@@ -364,6 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     userData.map_longitude !== null && userData.map_longitude !== undefined ? parseFloat(userData.map_longitude) : -0.09,
                     userData.map_latitude !== null && userData.map_latitude !== undefined ? parseFloat(userData.map_latitude) : 51.505
                 ];
+                userId = userData.id || userData.user_id || null;
                 resetInactivityTimer();
             } else if (response.status === 401) {
                 console.error('Unauthorized: Invalid or expired token. Redirecting to login.');
@@ -382,7 +504,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Network error fetching initial user data for map:', error);
-        }        map = new mapboxgl.Map({
+        }
+        map = new mapboxgl.Map({
             container: 'map',
             style: '/static/config/style.json', // Load custom style.json for sources and tiles
             center: initialCenter,
@@ -416,6 +539,15 @@ document.addEventListener('DOMContentLoaded', () => {
                         // All sources loaded, now log all layer ids
                         const layerIds = map.getStyle().layers.map(l => l.id);
                         console.log('All style layers loaded. Layer IDs:', layerIds);
+                        // --- Set user_id filter for active_lots layers ---
+                        if (userId !== null) {
+                            const filter = ["==", ["get", "user_id"], userId];
+                            ["active_lots-fill", "active_lots-outline", "active_lots_icons-markers"].forEach(layerId => {
+                                if (map.getLayer(layerId)) {
+                                    map.setFilter(layerId, filter);
+                                }
+                            });
+                        }
                     }
                 }, 100);
             });
@@ -426,6 +558,9 @@ document.addEventListener('DOMContentLoaded', () => {
             .setLngLat(initialCenter)
             // .setPopup(new mapboxgl.Popup({ offset: 25 }).setHTML("<h3>Your Last Saved Location</h3><p>This is where your map was centered.</p>"))
             .addTo(map);
+        // Expose map and marker globally for navbar search bar
+        window.map = map;
+        window.marker = marker;
 
         // console.log('Map initialized with Mapbox GL JS and user data.');
 
