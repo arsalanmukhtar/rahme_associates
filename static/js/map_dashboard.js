@@ -967,9 +967,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 li.innerHTML = `
                     <span class="text-gray-900 text-sm select-none font-normal">${prettyLayerName(layerName)}</span>
                     <span class="flex items-center space-x-2">
-                        <button class="toggle-group-visibility-btn p-1 rounded-full hover:bg-gray-200" data-layer-group="${layerName}" aria-label="Toggle group visibility">
-                            <i data-lucide="eye" class="eye-icon eye-on text-blue-500" style="display:inline;width:1.2rem;height:1.2rem;"></i>
-                            <i data-lucide="eye-off" class="eye-icon eye-off text-gray-400" style="display:none;width:1.2rem;height:1.2rem;"></i>
+                        <button class="toggle-group-visibility-btn group p-1 rounded-full hover:bg-gray-200 focus:bg-gray-200 transition-colors duration-150" data-layer-group="${layerName}" aria-label="Toggle group visibility" style="outline:none;">
+                            <span class="flex items-center justify-center w-4 h-4 rounded-full group-hover:bg-gray-200 group-focus:bg-gray-200 transition-colors duration-150">
+                                <i data-lucide="eye" class="eye-icon eye-on text-blue-500" style="display:inline;width:1.2rem;height:1.2rem;"></i>
+                                <i data-lucide="eye-off" class="eye-icon eye-off text-gray-400" style="display:none;width:1.2rem;height:1.2rem;"></i>
+                            </span>
                         </button>
                         <span class="grip-icon-wrapper ml-1" style="display:inline-flex;align-items:center;cursor:grab;">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#545454" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-grip-icon lucide-grip"><circle cx="12" cy="5" r="1"/><circle cx="19" cy="5" r="1"/><circle cx="5" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="12" cy="19" r="1"/><circle cx="19" cy="19" r="1"/><circle cx="5" cy="19" r="1"/></svg>
@@ -1063,7 +1065,8 @@ document.addEventListener('DOMContentLoaded', () => {
             offersTableContainer.style.transform = 'translateY(0)';
             offersTableContainer.style.height = '40vh'; // Fixed height when open
             offersAgGridDiv.style.height = '100%'; // AG Grid fills container
-            offersTableChevron.style.transform = 'rotate(180deg)';
+            // Chevron faces DOWN when table is open (ready to close)
+            offersTableChevron.style.transform = 'rotate(0deg)';
             offersTableToggleBtn.style.transform = 'translate(-50%, 0)';
             offersTableToggleBtn.style.bottom = 'calc(40vh + 12px)'; // Add 12px gap above table
             if (offersTabLatest) {
@@ -1078,7 +1081,8 @@ document.addEventListener('DOMContentLoaded', () => {
             offersTableContainer.style.transform = 'translateY(100%)';
             offersTableContainer.style.height = '40vh'; // Keep height for animation
             offersAgGridDiv.style.height = '100%';
-            offersTableChevron.style.transform = 'rotate(0deg)';
+            // Chevron faces UP when table is closed (ready to open)
+            offersTableChevron.style.transform = 'rotate(180deg)';
             offersTableToggleBtn.style.transform = 'translate(-50%, 0)';
             offersTableToggleBtn.style.bottom = '10px'; // At bottom of viewport
             if (offersTabLatest) {

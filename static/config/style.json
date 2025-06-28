@@ -4,7 +4,7 @@
     "name": "NSW Map",
     "glyphs": "mapbox://fonts/mapbox/{fontstack}/{range}.pbf",
     "sources": {
-        "plain_raster": {
+        "stadiamaps_raster": {
             "type": "raster",
             "tiles": [
                 "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}.png"
@@ -79,9 +79,9 @@
     },
     "layers": [
         {
-            "id": "plain-basemap",
+            "id": "stadiamaps-basemap",
             "type": "raster",
-            "source": "plain_raster"
+            "source": "stadiamaps_raster"
         },
         {
             "id": "osm-basemap",
