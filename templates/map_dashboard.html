@@ -109,18 +109,25 @@
 
     <!-- Map Container -->
     <div id="map" class="flex-grow w-full relative z-10 transition-all duration-300 ease-in-out">
-        <!-- Custom Map Controls -->
-        <div id="custom-map-controls" class="absolute bottom-4 right-4 z-10 flex space-x-2">
-            <button id="zoom-in" class="map-control-button" aria-label="Zoom In">
-                <i data-lucide="plus"></i>
-            </button>
-            <button id="zoom-out" class="map-control-button" aria-label="Zoom Out">
-                <i data-lucide="minus"></i>
-            </button>
-            <button id="reset-compass" class="map-control-button" aria-label="Reset Compass">
-                <i data-lucide="compass"></i>
-            </button>
-        </div>
+    <!-- Custom Map Controls -->
+    <div id="custom-map-controls" class="absolute bottom-4 right-4 z-10 flex space-x-2">
+        <button id="zoom-in" class="map-control-button group" aria-label="Zoom In">
+            <i data-lucide="plus"></i>
+            <span class="pointer-events-none absolute right-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(50%);">Zoom In</span>
+        </button>
+        <button id="zoom-out" class="map-control-button group" aria-label="Zoom Out">
+            <i data-lucide="minus"></i>
+            <span class="pointer-events-none absolute right-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(50%);">Zoom Out</span>
+        </button>
+        <button id="reset-compass" class="map-control-button group" aria-label="Reset Compass">
+            <i data-lucide="compass"></i>
+            <span class="pointer-events-none absolute right-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(50%);">Reset Compass</span>
+        </button>
+        <button id="toggle-eye" class="map-control-button group" aria-label="Toggle Layer Visibility">
+            <i data-lucide="eye"></i>
+            <span class="pointer-events-none absolute right-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(50%);">Toggle Layer Visibility</span>
+        </button>
+    </div>
     </div>
 
     <!-- Settings Modal -->
@@ -223,15 +230,44 @@
         style="bottom: 0; height: 40vh; transform: translateY(100%);">
         <div id="offers-ag-grid" class="w-full h-full ag-theme-alpine"></div>
     </div>
-    <!-- Floating Chevron Toggle Button (smaller, with gap) -->
+    <!-- Floating Chevron Toggle Button (centered) -->
     <button id="toggle-offers-table"
-        class="fixed left-1/2 z-40 rounded-full bg-white bg-opacity-100 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out"
-        style="transform: translate(-50%, 0); bottom: 0; width: 26px; height: 26px;">
+        class="fixed left-1/2 z-40 rounded-full bg-white bg-opacity-100 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out group"
+        style="transform: translate(-50%, 0); bottom: 10px; width: 26px; height: 26px;"
+        aria-label="Toggle Offers Table"
+        >
         <svg id="offers-table-chevron" xmlns="http://www.w3.org/2000/svg"
             class="h-4 w-4 text-gray-600 transition-transform duration-300" fill="none" viewBox="0 0 24 24"
             stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
         </svg>
+        <span class="pointer-events-none absolute left-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(-50%);">Toggle Offers Table</span>
+    </button>
+
+    <!-- Latest Offers Tab Button (absolute, left of chevron) -->
+    <button id="offers-tab-latest"
+        class="fixed z-40 rounded-full bg-white bg-opacity-100 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out group"
+        style="left: calc(50% - 38px); transform: translate(-50%, 0); bottom: 10px; width: 26px; height: 26px;"
+        aria-label="Show Latest Offers"
+        >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12l2.5 2.5L16 9" />
+        </svg>
+        <span class="pointer-events-none absolute left-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(-50%);">Latest Offers</span>
+    </button>
+
+    <!-- Offers History Tab Button (absolute, right of chevron) -->
+    <button id="offers-tab-history"
+        class="fixed z-40 rounded-full bg-white bg-opacity-100 shadow-md border border-gray-300 p-1 flex items-center justify-center transition-all duration-300 ease-in-out group"
+        style="left: calc(50% + 38px); transform: translate(-50%, 0); bottom: 10px; width: 26px; height: 26px;"
+        aria-label="Show Offers History"
+        >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
+        </svg>
+        <span class="pointer-events-none absolute left-1/2 bottom-full mb-2 w-max px-2 py-1 rounded bg-gray-800 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap" style="transform: translateX(-50%);">Offers History</span>
     </button>
 
     <!-- Mapbox GL JS -->

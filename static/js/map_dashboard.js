@@ -1,6 +1,36 @@
 // static/js/map_dashboard.js
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Toggle all vector layers on/off ---
+    let vectorLayersVisible = true;
+    const toggleEyeBtn = document.getElementById('toggle-eye');
+    if (toggleEyeBtn) {
+        toggleEyeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (!window.map) return;
+            // Get all vector layers (type: 'vector')
+            const style = window.map.getStyle && window.map.getStyle();
+            if (!style || !style.layers) return;
+            // Find all vector layers (Mapbox GL JS: type 'fill', 'line', 'circle', 'symbol', 'heatmap', 'fill-extrusion')
+            const vectorTypes = ['fill', 'line', 'circle', 'symbol', 'heatmap', 'fill-extrusion'];
+            style.layers.forEach(layer => {
+                if (vectorTypes.includes(layer.type)) {
+                    try {
+                        window.map.setLayoutProperty(layer.id, 'visibility', vectorLayersVisible ? 'none' : 'visible');
+                    } catch (err) {
+                        // Some layers may not support layout property
+                    }
+                }
+            });
+            vectorLayersVisible = !vectorLayersVisible;
+            // Optionally, update the icon (eye/eye-off)
+            const eyeIcon = toggleEyeBtn.querySelector('i[data-lucide]');
+            if (eyeIcon) {
+                eyeIcon.setAttribute('data-lucide', vectorLayersVisible ? 'eye' : 'eye-off');
+                if (window.lucide && lucide.createIcons) lucide.createIcons();
+            }
+        });
+    }
     // --- Inject Centered Search Bar in Navbar ---
     function injectCenteredSearchBar() {
         // Find the navbar container
@@ -1027,6 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Fix: Table height and chevron gap ---
     // Helper to update table/chevron positions and heights
     function updateOffersTableLayout() {
+        const offersTabLatest = document.getElementById('offers-tab-latest');
+        const offersTabHistory = document.getElementById('offers-tab-history');
         if (offersTableOpen) {
             offersTableContainer.style.transform = 'translateY(0)';
             offersTableContainer.style.height = '40vh'; // Fixed height when open
@@ -1034,6 +1066,14 @@ document.addEventListener('DOMContentLoaded', () => {
             offersTableChevron.style.transform = 'rotate(180deg)';
             offersTableToggleBtn.style.transform = 'translate(-50%, 0)';
             offersTableToggleBtn.style.bottom = 'calc(40vh + 12px)'; // Add 12px gap above table
+            if (offersTabLatest) {
+                offersTabLatest.style.transform = 'translate(-50%, 0)';
+                offersTabLatest.style.bottom = 'calc(40vh + 12px)';
+            }
+            if (offersTabHistory) {
+                offersTabHistory.style.transform = 'translate(-50%, 0)';
+                offersTabHistory.style.bottom = 'calc(40vh + 12px)';
+            }
         } else {
             offersTableContainer.style.transform = 'translateY(100%)';
             offersTableContainer.style.height = '40vh'; // Keep height for animation
@@ -1041,6 +1081,14 @@ document.addEventListener('DOMContentLoaded', () => {
             offersTableChevron.style.transform = 'rotate(0deg)';
             offersTableToggleBtn.style.transform = 'translate(-50%, 0)';
             offersTableToggleBtn.style.bottom = '10px'; // At bottom of viewport
+            if (offersTabLatest) {
+                offersTabLatest.style.transform = 'translate(-50%, 0)';
+                offersTabLatest.style.bottom = '10px';
+            }
+            if (offersTabHistory) {
+                offersTabHistory.style.transform = 'translate(-50%, 0)';
+                offersTabHistory.style.bottom = '10px';
+            }
         }
     }
     function toggleOffersTable() {
@@ -1051,11 +1099,46 @@ document.addEventListener('DOMContentLoaded', () => {
     // On load, ensure correct initial state
     updateOffersTableLayout();
 
-    // AG Grid setup
+    // --- AG Grid setup with two datasets and tab switching ---
+    let offersData = { all_offers: [], latest_offers_per_location: [] };
+    // let offersGrid; // Already declared above, do not redeclare
+    let currentTab = 'latest'; // 'latest' or 'history'
+
+    // Remove tab buttons above the table and bind floating icon buttons instead
+    function injectOffersTabs() {
+        // Remove tab bar if it exists
+        let tabBar = document.getElementById('offers-table-tabs');
+        if (tabBar) {
+            tabBar.remove();
+        }
+        // Bind floating icon buttons
+        const latestBtn = document.getElementById('offers-tab-latest');
+        const historyBtn = document.getElementById('offers-tab-history');
+        if (latestBtn && historyBtn) {
+            latestBtn.addEventListener('click', () => switchOffersTab('latest'));
+            historyBtn.addEventListener('click', () => switchOffersTab('history'));
+        }
+        updateTabStyles();
+    }
+
+    function updateTabStyles() {
+        const latestBtn = document.getElementById('offers-tab-latest');
+        const historyBtn = document.getElementById('offers-tab-history');
+        if (!latestBtn || !historyBtn) return;
+        // Remove all highlight classes first
+        latestBtn.classList.remove('ring-2', 'ring-green-500', 'bg-green-50');
+        historyBtn.classList.remove('ring-2', 'ring-blue-500', 'bg-blue-50');
+        if (currentTab === 'latest') {
+            latestBtn.classList.add('ring-2', 'ring-green-500', 'bg-green-50');
+        } else {
+            historyBtn.classList.add('ring-2', 'ring-blue-500', 'bg-blue-50');
+        }
+    }
+
     async function fetchOffersSummary() {
         try {
             const authToken = localStorage.getItem('authToken');
-            if (!authToken) return;
+            if (!authToken) return { all_offers: [], latest_offers_per_location: [] };
             const response = await fetch('/api/v1/map-data/offers-summary', {
                 headers: { 'Authorization': `Bearer ${authToken}` }
             });
@@ -1064,12 +1147,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return data;
         } catch (err) {
             console.error('Error fetching offers summary:', err);
-            return [];
+            return { all_offers: [], latest_offers_per_location: [] };
         }
     }
-    async function initOffersGrid() {
-        const rowData = await fetchOffersSummary();
-        const columnDefs = [
+
+    function getOffersColumnDefs() {
+        return [
             { headerName: 'ID', field: 'id', minWidth: 60 },
             { headerName: 'Remark', field: 'remark', minWidth: 140 },
             { headerName: 'Date', field: 'date', minWidth: 100 },
@@ -1083,8 +1166,24 @@ document.addEventListener('DOMContentLoaded', () => {
             { headerName: 'Offer', field: 'offer', minWidth: 180 },
             { headerName: 'Comment', field: 'comment', minWidth: 180 },
         ];
+    }
+
+    function renderOffersGrid(tab) {
+        if (!window.agGrid) return;
+        // Destroy previous grid if exists
+        if (offersGrid && offersGrid.destroyGrid) {
+            offersGrid.destroyGrid();
+        } else if (offersAgGridDiv && offersAgGridDiv.innerHTML) {
+            offersAgGridDiv.innerHTML = '';
+        }
+        let rowData = [];
+        if (tab === 'latest') {
+            rowData = offersData.latest_offers_per_location || [];
+        } else {
+            rowData = offersData.all_offers || [];
+        }
         offersGrid = agGrid.createGrid(offersAgGridDiv, {
-            columnDefs,
+            columnDefs: getOffersColumnDefs(),
             rowData,
             defaultColDef: { resizable: true, sortable: true, filter: true },
             domLayout: 'normal',
@@ -1092,6 +1191,19 @@ document.addEventListener('DOMContentLoaded', () => {
             theme: 'legacy',
         });
     }
+
+    function switchOffersTab(tab) {
+        currentTab = tab;
+        updateTabStyles();
+        renderOffersGrid(tab);
+    }
+
+    async function initOffersGrid() {
+        offersData = await fetchOffersSummary();
+        injectOffersTabs();
+        renderOffersGrid(currentTab);
+    }
+
     if (window.agGrid) initOffersGrid();
 
     // Collapse sidebar or offers table when clicking outside
@@ -1100,13 +1212,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const sidebarToggle = document.getElementById('sidebar-toggle');
         const offersTableContainer = document.getElementById('offers-table-container');
         const offersTableToggle = document.getElementById('toggle-offers-table');
+        const tabBar = document.getElementById('offers-table-tabs');
+        const offersTabLatest = document.getElementById('offers-tab-latest');
+        const offersTabHistory = document.getElementById('offers-tab-history');
 
-        // If click is inside sidebar or its toggle, or inside offers table or its toggle, do nothing
+        // If click is inside sidebar or its toggle, or inside offers table or its toggle, or inside tabBar, or on floating tab buttons, do nothing
         if (
             (sidebar && sidebar.contains(event.target)) ||
             (sidebarToggle && sidebarToggle.contains(event.target)) ||
             (offersTableContainer && offersTableContainer.contains(event.target)) ||
-            (offersTableToggle && offersTableToggle.contains(event.target))
+            (offersTableToggle && offersTableToggle.contains(event.target)) ||
+            (tabBar && tabBar.contains(event.target)) ||
+            (offersTabLatest && offersTabLatest.contains(event.target)) ||
+            (offersTabHistory && offersTabHistory.contains(event.target))
         ) {
             return;
         }

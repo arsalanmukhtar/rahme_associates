@@ -152,20 +152,85 @@ async def get_table_fields(
 async def get_offers_summary(
     current_user: UserInDB = Depends(get_current_user),
 ):
+    """
+    Fetches two sets of records for the current user's offers summary:
+    1. The complete list of all offers.
+    2. A list of unique locations (street, suburb, state) with the latest date and time.
+    """
     try:
-        # Use psycopg2 directly to query the offers_summary view/table filtered by user_id
+        # Establish a database connection
         conn = db_ops.get_db_connection()
+
+        # Initialize an empty dictionary to hold the two datasets
+        results = {}
+
+        # --- 1. Get the whole table for the user ---
         with conn.cursor() as cursor:
             cursor.execute(
-                "SELECT * FROM public.offers_summary WHERE user_id = %s", (current_user.id,)
+                "SELECT * FROM public.offers_summary WHERE user_id = %s",
+                (current_user.id,),
             )
             columns = [desc[0] for desc in cursor.description]
-            offers = [dict(zip(columns, row)) for row in cursor.fetchall()]
+            offers_full_list = [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+        results["all_offers"] = offers_full_list
+
+        # --- 2. Get DISTINCT locations with the latest date and time ---
+        with conn.cursor() as cursor:
+            # This query uses a subquery to find the maximum datetime for each unique location
+            # and then joins it back to the main table to get the corresponding row.
+            # Alternatively, the window function approach is often more efficient.
+            # I'll use the window function as it's more robust and scalable.
+            cursor.execute(
+                """
+                WITH ranked_offers AS (
+                    SELECT
+                        *,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY street_number, street_name, suburb, state
+                            ORDER BY date DESC, time DESC, id DESC  -- Use 'id' as a reliable tie-breaker
+                        ) AS rn
+                    FROM
+                        public.offers_summary
+                    WHERE
+                        user_id = %s
+                )
+                SELECT DISTINCT
+                    id,
+                    street_number, street_name, suburb, state, offer, frontage, sqm, remark, comment,
+                    date,
+                    time
+                FROM
+                    ranked_offers
+                WHERE
+                    rn = 1;
+                """,
+                (current_user.id,),
+            )
+            columns_latest = [desc[0] for desc in cursor.description]
+            offers_latest_per_location = [
+                dict(zip(columns_latest, row)) for row in cursor.fetchall()
+            ]
+
+        # For frontend compatibility, use the same key as before: 'latest_offers_per_location'
+        results["latest_offers_per_location"] = offers_latest_per_location
+
+        # Close the connection
         conn.close()
-        return offers
+
+        # Return both datasets
+        return results
+
     except Exception as e:
         print("Error fetching offers summary:", e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to fetch offers summary")
+        # It's good practice to close the connection in case of an error as well
+        if "conn" in locals() and conn:
+            conn.close()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch offers summary",
+        )
+
 
 @router.api_route("/proxy/tiles/{layer}/{z}/{x}/{y}.pbf", methods=["GET"])
 async def proxy_tile(layer: str, z: int, x: int, y: int):
